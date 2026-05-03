@@ -1,4 +1,4 @@
-# mac_install
+# mac-install
 
 A collection of small, idempotent install scripts for setting up a fresh macOS workstation. Each script handles one tool; `install-master.sh` runs them in a sensible order. Most scripts are thin wrappers around Homebrew (`brew install` / `brew install --cask`).
 
@@ -9,20 +9,20 @@ A collection of small, idempotent install scripts for setting up a fresh macOS w
 On a brand-new Mac, you don't have this repo yet. Run the bootstrap one-liner — it installs the Xcode Command Line Tools and Homebrew, prompts for your git name and email, generates an SSH key, prints it for you to paste into GitHub, then clones this repo.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/hofftodd/mac_install/main/bootstrap.sh | bash
+curl -fsSL https://raw.githubusercontent.com/hofftodd/mac-install/main/bootstrap.sh | bash
 ```
 
 To run non-interactively:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/hofftodd/mac_install/main/bootstrap.sh \
+curl -fsSL https://raw.githubusercontent.com/hofftodd/mac-install/main/bootstrap.sh \
   | GIT_USER_NAME="Jane Doe" GIT_USER_EMAIL="jane@example.com" bash
 ```
 
 Then:
 
 ```bash
-cd ~/mac_install
+cd ~/mac-install
 ./install-master.sh
 ```
 
@@ -73,15 +73,12 @@ PG_FORMULA=postgresql@17 ./install-postgres.sh
 - `install-vscode.sh` — Visual Studio Code
 - `install-cursor.sh` — Cursor AI code editor
 - `install-intellij.sh` — JetBrains IntelliJ IDEA
-- `install-micro.sh` — micro, modern terminal text editor
-- `install-claude-code.sh` — Claude Code CLI
-- `install-opencode.sh` — opencode terminal coding agent
-- `install-pi.sh` — pi (pi.dev) terminal coding agent (npm; depends on Node)
 - `install-obsidian.sh` — Obsidian
 - `install-docker-desktop.sh` — Docker Desktop
 - `install-gmail.sh`, `install-google-calendar.sh`, `install-google-contacts.sh` — Google web-app launchers (Chrome `--app=` mode wrapped in a `.app` bundle in `~/Applications`)
 - `install-vlc.sh` — VLC media player
 - `install-handbrake.sh` — HandBrake (GUI + CLI)
+- `install-utm.sh` — UTM, virtual machines UI using QEMU
 
 ### Comms
 - `install-slack.sh`, `install-discord.sh`, `install-zoom.sh`, `install-signal.sh`
@@ -111,6 +108,11 @@ PG_FORMULA=postgresql@17 ./install-postgres.sh
 - `install-starship.sh` — Starship prompt with the Gruvbox Rainbow preset.
 - `install-nerd-fonts.sh` — FiraCode, JetBrainsMono, Hack, Meslo, CaskaydiaCove (Nerd Fonts) via brew casks.
 - `install-btop.sh` — btop process/resource monitor
+- `install-micro.sh` — micro, modern terminal text editor
+- `install-fresh.sh` — fresh, terminal text editor
+- `install-claude-code.sh` — Claude Code CLI
+- `install-opencode.sh` — opencode terminal coding agent
+- `install-pi.sh` — pi (pi.dev) terminal coding agent (npm; depends on Node)
 
 ## Notes
 

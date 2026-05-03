@@ -28,7 +28,7 @@ case "$BACKEND" in
         ;;
 esac
 
-cmake -S "$SRC_DIR" -B "$SRC_DIR/build" "${CMAKE_FLAGS[@]}"
+cmake -S "$SRC_DIR" -B "$SRC_DIR/build" ${CMAKE_FLAGS[@]+"${CMAKE_FLAGS[@]}"}
 cmake --build "$SRC_DIR/build" --config Release -j"$(sysctl -n hw.ncpu)"
 
 mkdir -p "$HOME/.local/bin"

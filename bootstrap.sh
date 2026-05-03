@@ -3,14 +3,14 @@ set -euo pipefail
 
 # Bootstrap a fresh macOS machine: install Xcode CLT + Homebrew, configure git
 # identity, generate an SSH key (if needed), wait for you to add it to GitHub,
-# then clone the mac_install repo. After this finishes you can run
+# then clone the mac-install repo. After this finishes you can run
 # ./install-master.sh inside the cloned repo.
 #
 # This script is intentionally NOT part of install-master.sh — it's the
 # chicken-and-egg "how do I even get the install scripts onto the machine"
 # step. To run on a fresh box:
 #
-#   curl -fsSL https://raw.githubusercontent.com/hofftodd/mac_install/main/bootstrap.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/hofftodd/mac-install/main/bootstrap.sh | bash
 #
 # Override defaults via env vars (otherwise you'll be prompted):
 #   GIT_USER_NAME, GIT_USER_EMAIL, SSH_KEY, SSH_KEY_COMMENT, REPO_URL, CLONE_DIR
@@ -18,8 +18,8 @@ set -euo pipefail
 GIT_USER_NAME="${GIT_USER_NAME:-}"
 GIT_USER_EMAIL="${GIT_USER_EMAIL:-}"
 SSH_KEY="${SSH_KEY:-$HOME/.ssh/id_ed25519}"
-REPO_URL="${REPO_URL:-git@github.com:hofftodd/mac_install.git}"
-CLONE_DIR="${CLONE_DIR:-$HOME/mac_install}"
+REPO_URL="${REPO_URL:-git@github.com:hofftodd/mac-install.git}"
+CLONE_DIR="${CLONE_DIR:-$HOME/mac-install}"
 
 echo "═══════════════════════════════════════════════════════════"
 echo "  macOS workstation bootstrap"

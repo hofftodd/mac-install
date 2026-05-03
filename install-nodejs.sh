@@ -24,7 +24,12 @@ export NVM_DIR="$HOME/.nvm"
 \. "$NVM_DIR/nvm.sh"
 
 nvm install "$NODE_VERSION"
-nvm alias default "$NODE_VERSION"
+# `nvm alias default` doesn't accept `--lts`; translate it to `lts/*`.
+if [ "$NODE_VERSION" = "--lts" ]; then
+    nvm alias default 'lts/*'
+else
+    nvm alias default "$NODE_VERSION"
+fi
 nvm use default
 
 echo "Node installed: $(node --version)"

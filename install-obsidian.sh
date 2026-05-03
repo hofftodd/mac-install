@@ -2,4 +2,8 @@
 set -euo pipefail
 
 # Obsidian.
-brew install --cask obsidian
+if [ -d "/Applications/Obsidian.app" ]; then
+    echo "Obsidian already present at /Applications/Obsidian.app — skipping cask install."
+else
+    brew install --cask obsidian
+fi

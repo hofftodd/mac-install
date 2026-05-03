@@ -65,8 +65,9 @@ elif [ -x /usr/local/bin/brew ]; then
     eval "$(/usr/local/bin/brew shellenv)"
 fi
 
-# git ships with the CLT, but make sure we have a recent one.
-brew install git
+# git ships with the CLT, but make sure we have a recent one. glow is used by
+# install-master.sh to render this repo's README from inside the TUI menu.
+brew install git glow
 
 # ---- 2. Configure git identity + sensible defaults --------------------------
 echo

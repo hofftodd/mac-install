@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Interactive menu for selecting which install scripts to run.
-# Continues past any sub-script that fails; prints a punch list at the end.
+# Interactive install menu — pure-bash TUI with a collapsible category tree,
+# arrow-key navigation, checkboxes, and select/deselect-all (global +
+# per-category). Press `r` to view README.md from inside the menu.
+# No external dependencies beyond bash + tput + ANSI.
 #
 # Each sub-script has its own `set -e`, so a failed script aborts itself
-# before causing harm — we just record it and move on.
+# before causing harm — we record it and move on.
 
-# ITEMS holds entries as "category|path" pairs. Order is preserved for
-# both the menu and the install run. Add new scripts here.
 ITEMS=(
     "Setup|./update-versions.sh"
 
@@ -62,252 +62,436 @@ ITEMS=(
     "Terminal experience|./install-btop.sh"
 )
 
-# Build parallel arrays from ITEMS (kept bash 3.2 compatible — macOS default).
+# --- Build state (parallel arrays; bash 3.2 compatible) ---
+
+CAT_NAMES=()        # [cat_idx] = "Category Name"
+CAT_EXPANDED=()     # [cat_idx] = 0|1 (default 1)
+CAT_ITEM_IDXS=()    # [cat_idx] = "fi1 fi2 fi3"
+
 PATHS=()
-CATS=()
-SEL=()
-CAT_ORDER=()
+ITEM_NAMES=()
+ITEM_CATS=()
+ITEM_SEL=()
 
 for entry in "${ITEMS[@]}"; do
     cat="${entry%%|*}"
     path="${entry#*|}"
-    PATHS+=("$path")
-    CATS+=("$cat")
-    SEL+=(1)  # default: everything selected
 
-    # Track unique categories in first-seen order
-    seen=0
-    for c in "${CAT_ORDER[@]}"; do
-        if [ "$c" = "$cat" ]; then seen=1; break; fi
+    cat_idx=-1
+    for ((i = 0; i < ${#CAT_NAMES[@]}; i++)); do
+        if [ "${CAT_NAMES[$i]}" = "$cat" ]; then cat_idx=$i; break; fi
     done
-    [ "$seen" -eq 0 ] && CAT_ORDER+=("$cat")
+    if [ $cat_idx -lt 0 ]; then
+        cat_idx=${#CAT_NAMES[@]}
+        CAT_NAMES+=("$cat")
+        CAT_EXPANDED+=(1)
+        CAT_ITEM_IDXS+=("")
+    fi
+
+    flat_idx=${#PATHS[@]}
+    PATHS+=("$path")
+    ITEM_NAMES+=("$(basename "$path")")
+    ITEM_CATS+=("$cat_idx")
+    ITEM_SEL+=(1)
+
+    if [ -z "${CAT_ITEM_IDXS[$cat_idx]}" ]; then
+        CAT_ITEM_IDXS[$cat_idx]="$flat_idx"
+    else
+        CAT_ITEM_IDXS[$cat_idx]="${CAT_ITEM_IDXS[$cat_idx]} $flat_idx"
+    fi
 done
 
 NUM_ITEMS=${#PATHS[@]}
+NUM_CATS=${#CAT_NAMES[@]}
 
-# --- Display helpers ---
+VISIBLE_ROWS=()    # entries: "C:catidx" | "I:flatidx"
+CURSOR=0
+WINDOW_TOP=0
 
-# ANSI colors (only emit when stdout is a terminal)
-if [ -t 1 ]; then
-    C_BOLD=$'\033[1m'; C_DIM=$'\033[2m'
-    C_GREEN=$'\033[32m'; C_CYAN=$'\033[36m'; C_YELLOW=$'\033[33m'; C_RED=$'\033[31m'
-    C_RESET=$'\033[0m'
-else
-    C_BOLD=""; C_DIM=""; C_GREEN=""; C_CYAN=""; C_YELLOW=""; C_RED=""; C_RESET=""
-fi
-
-print_banner() {
-    printf '%s\n' "$C_CYAN"
-    cat <<'EOF'
-                            _           _        _ _
-  _ __ ___   __ _  ___     (_)_ __  ___| |_ __ _| | |
- | '_ ` _ \ / _` |/ __|____| | '_ \/ __| __/ _` | | |
- | | | | | | (_| | (_|_____| | | | \__ \ || (_| | | |
- |_| |_| |_|\__,_|\___|    |_|_| |_|___/\__\__,_|_|_|
-EOF
-    printf '%s\n' "$C_RESET"
-    printf '%s  Welcome — let'\''s set up your Mac.%s\n' "$C_BOLD" "$C_RESET"
-    printf '%s  https://github.com/hofftodd/mac-install%s\n' "$C_DIM" "$C_RESET"
-    printf '%s  Toggle items below; everything is selected by default.%s\n\n' "$C_DIM" "$C_RESET"
-}
-
-# Print a 2-letter shorthand for a category (e.g. "Editors / dev apps" -> "ED").
-cat_short() {
-    local name="$1"
-    local first second
-    first="$(printf '%s' "$name" | tr -cd '[:alnum:]' | cut -c1 | tr 'a-z' 'A-Z')"
-    second="$(printf '%s' "$name" | tr ' ' '\n' | sed -n '2p' | tr -cd '[:alnum:]' | cut -c1 | tr 'a-z' 'A-Z')"
-    if [ -z "$second" ]; then
-        printf '%s' "$(printf '%s' "$name" | tr -cd '[:alnum:]' | cut -c1-2 | tr 'a-z' 'A-Z')"
-    else
-        printf '%s%s' "$first" "$second"
-    fi
-}
-
-print_menu() {
-    local i=0 cat path mark sel_count=0 total=$NUM_ITEMS
-    for ((i = 0; i < NUM_ITEMS; i++)); do
-        [ "${SEL[$i]}" = "1" ] && sel_count=$((sel_count + 1))
-    done
-
-    echo "${C_BOLD}Selected: ${sel_count}/${total}${C_RESET}"
-    echo
-
-    local current_cat=""
-    for ((i = 0; i < NUM_ITEMS; i++)); do
-        cat="${CATS[$i]}"
-        path="${PATHS[$i]}"
-        if [ "$cat" != "$current_cat" ]; then
-            current_cat="$cat"
-            local short cat_total=0 cat_sel=0 j
-            short="$(cat_short "$cat")"
-            for ((j = 0; j < NUM_ITEMS; j++)); do
-                if [ "${CATS[$j]}" = "$cat" ]; then
-                    cat_total=$((cat_total + 1))
-                    [ "${SEL[$j]}" = "1" ] && cat_sel=$((cat_sel + 1))
-                fi
+build_visible_rows() {
+    VISIBLE_ROWS=()
+    local ci fi
+    for ((ci = 0; ci < NUM_CATS; ci++)); do
+        VISIBLE_ROWS+=("C:$ci")
+        if [ "${CAT_EXPANDED[$ci]}" = "1" ]; then
+            for fi in ${CAT_ITEM_IDXS[$ci]}; do
+                VISIBLE_ROWS+=("I:$fi")
             done
-            echo
-            printf '%s━━ %s %s [%s] (%d/%d)%s\n' \
-                "$C_CYAN" "$cat" "$C_DIM" "$short" "$cat_sel" "$cat_total" "$C_RESET"
         fi
-        if [ "${SEL[$i]}" = "1" ]; then
-            mark="${C_GREEN}[x]${C_RESET}"
+    done
+}
+
+# --- Terminal setup ---
+
+cleanup() { printf '\033[?25h\033[?7h'; stty "$STTY_SAVED" 2>/dev/null; }
+STTY_SAVED="$(stty -g 2>/dev/null || echo)"
+trap cleanup EXIT INT TERM
+printf '\033[?25l'   # hide cursor
+
+# --- Render ---
+
+cat_counts() {
+    local cat_idx="$1" cs=0 ct=0 fi
+    for fi in ${CAT_ITEM_IDXS[$cat_idx]}; do
+        ct=$((ct + 1))
+        [ "${ITEM_SEL[$fi]}" = "1" ] && cs=$((cs + 1))
+    done
+    printf '%d %d' "$cs" "$ct"
+}
+
+calc_window() {
+    local term_lines
+    term_lines="$(tput lines 2>/dev/null || echo 40)"
+    # 5 banner + 1 blank + 1 status + 1 blank = 8 above; 1 blank + 3 footer = 4 below
+    WINDOW_HEIGHT=$((term_lines - 12))
+    [ "$WINDOW_HEIGHT" -lt 5 ] && WINDOW_HEIGHT=5
+
+    if [ "$CURSOR" -lt "$WINDOW_TOP" ]; then
+        WINDOW_TOP=$CURSOR
+    elif [ "$CURSOR" -ge $((WINDOW_TOP + WINDOW_HEIGHT)) ]; then
+        WINDOW_TOP=$((CURSOR - WINDOW_HEIGHT + 1))
+    fi
+    [ "$WINDOW_TOP" -lt 0 ] && WINDOW_TOP=0
+    local max_top=$((${#VISIBLE_ROWS[@]} - WINDOW_HEIGHT))
+    [ "$max_top" -lt 0 ] && max_top=0
+    [ "$WINDOW_TOP" -gt "$max_top" ] && WINDOW_TOP=$max_top
+}
+
+render() {
+    build_visible_rows
+    if [ "$CURSOR" -ge "${#VISIBLE_ROWS[@]}" ]; then
+        CURSOR=$((${#VISIBLE_ROWS[@]} - 1))
+    fi
+    [ "$CURSOR" -lt 0 ] && CURSOR=0
+    calc_window
+
+    # Home, then redraw line-by-line with EOL clears, finishing with screen clear-below.
+    printf '\033[H'
+
+    # Banner.
+    printf '\033[36m\033[K\n'
+    printf '%s\033[K\n' "                            _           _        _ _"
+    printf '%s\033[K\n' "  _ __ ___   __ _  ___     (_)_ __  ___| |_ __ _| | |"
+    printf '%s\033[K\n' " | '_ \` _ \\ / _\` |/ __|____| | '_ \\/ __| __/ _\` | | |"
+    printf '%s\033[K\n' " | | | | | | (_| | (_|_____| | | | \\__ \\ || (_| | | |"
+    printf '%s\033[K\n' " |_| |_| |_|\\__,_|\\___|    |_|_| |_|___/\\__\\__,_|_|_|"
+    printf '\033[0m\033[K\n'
+
+    # Status.
+    local sel_total=0 fi
+    for ((fi = 0; fi < NUM_ITEMS; fi++)); do
+        [ "${ITEM_SEL[$fi]}" = "1" ] && sel_total=$((sel_total + 1))
+    done
+    printf '  \033[1mSelected: %d/%d\033[0m\033[K\n\033[K\n' "$sel_total" "$NUM_ITEMS"
+
+    # Visible rows window.
+    local end=$((WINDOW_TOP + WINDOW_HEIGHT))
+    [ "$end" -gt "${#VISIBLE_ROWS[@]}" ] && end=${#VISIBLE_ROWS[@]}
+
+    local r vr kind idx hl reset
+    for ((r = WINDOW_TOP; r < end; r++)); do
+        vr="${VISIBLE_ROWS[$r]}"
+        kind="${vr%%:*}"
+        idx="${vr#*:}"
+        if [ "$r" -eq "$CURSOR" ]; then
+            hl=$'\033[7m'; reset=$'\033[27m'
         else
-            mark="${C_DIM}[ ]${C_RESET}"
+            hl=""; reset=""
         fi
-        printf '  %s %3d. %s\n' "$mark" "$((i + 1))" "$(basename "$path")"
-    done
-    echo
-}
-
-print_help() {
-    cat <<EOF
-${C_BOLD}Commands${C_RESET}
-  ${C_CYAN}<n> [n ...]${C_RESET}    toggle items by number (e.g. "3 7 12")
-  ${C_CYAN}<n>-<m>${C_RESET}        toggle a range (e.g. "5-9")
-  ${C_CYAN}all${C_RESET} / ${C_CYAN}none${C_RESET}    select / deselect everything
-  ${C_CYAN}+<CAT>${C_RESET}         select all in a category (e.g. "+ED" or "+Editors")
-  ${C_CYAN}-<CAT>${C_RESET}         deselect all in a category
-  ${C_CYAN}cats${C_RESET}           list categories with their shortcuts
-  ${C_CYAN}list${C_RESET}           redraw the menu
-  ${C_CYAN}help${C_RESET}           show this help
-  ${C_CYAN}go${C_RESET} / ${C_CYAN}run${C_RESET}      run the selected scripts
-  ${C_CYAN}q${C_RESET} / ${C_CYAN}quit${C_RESET}     quit without running
-EOF
-}
-
-print_categories() {
-    echo "${C_BOLD}Categories${C_RESET}"
-    local c short
-    for c in "${CAT_ORDER[@]}"; do
-        short="$(cat_short "$c")"
-        printf '  %s%-3s%s  %s\n' "$C_CYAN" "$short" "$C_RESET" "$c"
-    done
-}
-
-# Set selection for items in a matching category. matcher = shorthand or
-# case-insensitive substring of the category name. value = 0 or 1.
-set_category() {
-    local matcher="$1" value="$2"
-    local matched=0 i cat short
-    local lc_matcher; lc_matcher="$(printf '%s' "$matcher" | tr 'A-Z' 'a-z')"
-    for c in "${CAT_ORDER[@]}"; do
-        short="$(cat_short "$c")"
-        local lc_cat lc_short
-        lc_cat="$(printf '%s' "$c" | tr 'A-Z' 'a-z')"
-        lc_short="$(printf '%s' "$short" | tr 'A-Z' 'a-z')"
-        if [ "$lc_short" = "$lc_matcher" ] || [[ "$lc_cat" == *"$lc_matcher"* ]]; then
-            for ((i = 0; i < NUM_ITEMS; i++)); do
-                [ "${CATS[$i]}" = "$c" ] && SEL[$i]="$value"
-            done
-            matched=1
+        if [ "$kind" = "C" ]; then
+            local marker counts cs ct
+            if [ "${CAT_EXPANDED[$idx]}" = "1" ]; then marker="▼"; else marker="▶"; fi
+            counts="$(cat_counts "$idx")"
+            cs="${counts%% *}"; ct="${counts##* }"
+            printf '%s\033[36m%s %s\033[0m\033[2m (%d/%d)\033[0m%s\033[K\n' \
+                "$hl" "$marker" "${CAT_NAMES[$idx]}" "$cs" "$ct" "$reset"
+        else
+            local box
+            if [ "${ITEM_SEL[$idx]}" = "1" ]; then box="\033[32m[x]\033[0m"; else box="[ ]"; fi
+            printf "%s    %b %s%s\033[K\n" "$hl" "$box" "${ITEM_NAMES[$idx]}" "$reset"
         fi
     done
-    if [ "$matched" -eq 0 ]; then
-        echo "${C_YELLOW}No category matches '$matcher'. Try 'cats' to list them.${C_RESET}"
-    fi
+
+    # Pad blank lines if window underfilled (tree shorter than window).
+    local rendered=$((end - WINDOW_TOP))
+    while [ "$rendered" -lt "$WINDOW_HEIGHT" ]; do
+        printf '\033[K\n'
+        rendered=$((rendered + 1))
+    done
+
+    # Footer.
+    printf '\033[K\n'
+    printf '  \033[2m↑↓ move · space toggle · ←→ collapse/expand · r README · c config\033[0m\033[K\n'
+    printf '  \033[2ma/d select/deselect all · A/D current category · g run · q quit\033[0m\033[K\n'
+
+    # Clear anything below.
+    printf '\033[J'
 }
 
-toggle_index() {
-    local n="$1"
-    if ! [[ "$n" =~ ^[0-9]+$ ]] || [ "$n" -lt 1 ] || [ "$n" -gt "$NUM_ITEMS" ]; then
-        echo "${C_YELLOW}Out of range: $n${C_RESET}"
+# --- Input ---
+
+read_key() {
+    local c rest
+    IFS= read -rsn1 c
+    if [ "$c" = $'\e' ]; then
+        IFS= read -rsn2 rest
+        case "$rest" in
+            "[A") echo up ;;
+            "[B") echo down ;;
+            "[C") echo right ;;
+            "[D") echo left ;;
+            *)    echo escape ;;
+        esac
         return
     fi
-    local idx=$((n - 1))
-    if [ "${SEL[$idx]}" = "1" ]; then
-        SEL[$idx]=0
-    else
-        SEL[$idx]=1
-    fi
+    case "$c" in
+        ""|$'\n'|$'\r') echo enter ;;
+        " ") echo space ;;
+        a) echo a ;;
+        d) echo d ;;
+        A) echo A ;;
+        D) echo D ;;
+        g) echo go ;;
+        q) echo quit ;;
+        r|R) echo readme ;;
+        c|C) echo config ;;
+        \?) echo help ;;
+        *) echo "x" ;;
+    esac
 }
 
-# --- Menu loop ---
-
-print_banner
-print_menu
-print_help
-echo
-
-while true; do
-    printf "${C_BOLD}> ${C_RESET}"
-    if ! IFS= read -r line; then
-        echo
-        echo "${C_DIM}EOF — quitting.${C_RESET}"
-        exit 0
+view_readme() {
+    local readme_path="$(dirname "$0")/README.md"
+    [ -f "$readme_path" ] || return
+    printf '\033[?25h\033[2J\033[H'
+    if command -v glow >/dev/null 2>&1; then
+        glow -p "$readme_path"
+    elif command -v bat >/dev/null 2>&1; then
+        bat --paging=always --language=md "$readme_path"
+    else
+        less "$readme_path"
     fi
-    # Strip leading/trailing whitespace
-    line="${line#"${line%%[![:space:]]*}"}"
-    line="${line%"${line##*[![:space:]]}"}"
+    printf '\033[?25l\033[2J'
+}
 
-    case "$line" in
-        ""|list)
-            print_menu
+# --- Bootstrap configuration panel ---
+#
+# Shows the values bootstrap.sh wrote to the system (git identity, SSH key,
+# origin URL, clone dir) and lets you edit name/email/origin in place. SSH
+# key and clone dir are display-only; changing them post-bootstrap is rarely
+# what you actually want.
+
+CFG_LABELS=("Git user name" "Git user email" "SSH key" "Repo URL" "Clone dir" "Render backend")
+CFG_EDITABLE=(1 1 0 1 0 0)
+CFG_CURSOR=0
+
+cfg_value() {
+    case "$1" in
+        0) git config --global user.name 2>/dev/null || echo "(unset)" ;;
+        1) git config --global user.email 2>/dev/null || echo "(unset)" ;;
+        2)
+            local key="${SSH_KEY:-$HOME/.ssh/id_ed25519}"
+            if [ -f "$key" ]; then
+                local fp
+                fp="$(ssh-keygen -lf "$key" 2>/dev/null | awk '{print $2}')"
+                printf '%s  (%s)' "$key" "$fp"
+            else
+                printf '(missing) %s' "$key"
+            fi
             ;;
-        help|"?")
-            print_help
+        3) git -C "$(dirname "$0")" remote get-url origin 2>/dev/null || echo "(no remote)" ;;
+        4) (cd "$(dirname "$0")" && pwd) ;;
+        5) printf '%s   \033[2m(used by install-llamacpp.sh; override via BACKEND env)\033[0m' "${BACKEND:-metal}" ;;
+    esac
+}
+
+render_config() {
+    printf '\033[H'
+
+    # Banner.
+    printf '\033[36m\033[K\n'
+    printf '%s\033[K\n' "                            _           _        _ _"
+    printf '%s\033[K\n' "  _ __ ___   __ _  ___     (_)_ __  ___| |_ __ _| | |"
+    printf '%s\033[K\n' " | '_ \` _ \\ / _\` |/ __|____| | '_ \\/ __| __/ _\` | | |"
+    printf '%s\033[K\n' " | | | | | | (_| | (_|_____| | | | \\__ \\ || (_| | | |"
+    printf '%s\033[K\n' " |_| |_| |_|\\__,_|\\___|    |_|_| |_|___/\\__\\__,_|_|_|"
+    printf '\033[0m\033[K\n'
+
+    printf '  \033[1mConfiguration\033[0m\033[K\n'
+    printf '  \033[2m(values pulled from system state)\033[0m\033[K\n\033[K\n'
+
+    local i hl reset edit_marker
+    for ((i = 0; i < ${#CFG_LABELS[@]}; i++)); do
+        if [ "$i" -eq "$CFG_CURSOR" ]; then
+            hl=$'\033[7m'; reset=$'\033[27m'
+        else
+            hl=""; reset=""
+        fi
+        edit_marker=""
+        [ "${CFG_EDITABLE[$i]}" = "1" ] && edit_marker='  \033[2m[edit]\033[0m'
+        printf "%s  %-18s %s%b%s\033[K\n" \
+            "$hl" "${CFG_LABELS[$i]}:" "$(cfg_value "$i")" "$edit_marker" "$reset"
+    done
+
+    # Pad to push footer near the bottom.
+    local term_lines pad
+    term_lines="$(tput lines 2>/dev/null || echo 40)"
+    pad=$((term_lines - 8 - 3 - ${#CFG_LABELS[@]} - 4))
+    [ "$pad" -lt 0 ] && pad=0
+    while [ "$pad" -gt 0 ]; do printf '\033[K\n'; pad=$((pad - 1)); done
+
+    printf '\033[K\n'
+    printf '  \033[2m↑↓ select · enter edit · esc / q back to menu\033[0m\033[K\n'
+    printf '\033[J'
+}
+
+edit_cfg_field() {
+    local idx=$CFG_CURSOR
+    [ "${CFG_EDITABLE[$idx]}" = "1" ] || return
+
+    cleanup
+    printf '\033[?25h\033[2J\033[H'
+
+    local current new
+    case "$idx" in
+        0)
+            current="$(cfg_value 0)"
+            echo "Current git user name: $current"
+            read -r -p "New value (empty to keep): " new < /dev/tty || new=""
+            [ -n "$new" ] && git config --global user.name "$new"
             ;;
-        cats|categories)
-            print_categories
+        1)
+            current="$(cfg_value 1)"
+            echo "Current git user email: $current"
+            read -r -p "New value (empty to keep): " new < /dev/tty || new=""
+            [ -n "$new" ] && git config --global user.email "$new"
             ;;
-        all)
-            for ((i = 0; i < NUM_ITEMS; i++)); do SEL[$i]=1; done
-            print_menu
-            ;;
-        none)
-            for ((i = 0; i < NUM_ITEMS; i++)); do SEL[$i]=0; done
-            print_menu
-            ;;
-        go|run|"")
-            break
-            ;;
-        q|quit|exit)
-            echo "${C_DIM}Quit without running.${C_RESET}"
-            exit 0
-            ;;
-        +*)
-            set_category "${line#+}" 1
-            print_menu
-            ;;
-        -*)
-            set_category "${line#-}" 0
-            print_menu
-            ;;
-        *)
-            # Tokenize on whitespace and commas
-            tokens=$(echo "$line" | tr ',' ' ')
-            for tok in $tokens; do
-                if [[ "$tok" =~ ^([0-9]+)-([0-9]+)$ ]]; then
-                    a="${BASH_REMATCH[1]}"; b="${BASH_REMATCH[2]}"
-                    if [ "$a" -gt "$b" ]; then tmp="$a"; a="$b"; b="$tmp"; fi
-                    for ((n = a; n <= b; n++)); do toggle_index "$n"; done
-                elif [[ "$tok" =~ ^[0-9]+$ ]]; then
-                    toggle_index "$tok"
-                else
-                    echo "${C_YELLOW}Unrecognized: '$tok'. Type 'help'.${C_RESET}"
-                fi
-            done
-            print_menu
+        3)
+            current="$(cfg_value 3)"
+            echo "Current origin URL: $current"
+            read -r -p "New value (empty to keep): " new < /dev/tty || new=""
+            [ -n "$new" ] && git -C "$(dirname "$0")" remote set-url origin "$new"
             ;;
     esac
 
-    if [ "$line" = "go" ] || [ "$line" = "run" ]; then break; fi
+    printf '\033[?25l\033[2J'
+}
+
+view_config() {
+    CFG_CURSOR=0
+    while true; do
+        render_config
+        local key; key="$(read_key)"
+        case "$key" in
+            up)   CFG_CURSOR=$((CFG_CURSOR - 1)); [ "$CFG_CURSOR" -lt 0 ] && CFG_CURSOR=0 ;;
+            down) CFG_CURSOR=$((CFG_CURSOR + 1)); [ "$CFG_CURSOR" -ge "${#CFG_LABELS[@]}" ] && CFG_CURSOR=$((${#CFG_LABELS[@]} - 1)) ;;
+            enter|space) edit_cfg_field ;;
+            quit|escape) printf '\033[2J'; break ;;
+            *) ;;
+        esac
+    done
+}
+
+# --- Actions ---
+
+cur_kind_idx() {
+    local vr="${VISIBLE_ROWS[$CURSOR]}"
+    echo "${vr%%:*} ${vr#*:}"
+}
+
+toggle_under_cursor() {
+    read kind idx <<< "$(cur_kind_idx)"
+    if [ "$kind" = "I" ]; then
+        if [ "${ITEM_SEL[$idx]}" = "1" ]; then ITEM_SEL[$idx]=0; else ITEM_SEL[$idx]=1; fi
+    else
+        if [ "${CAT_EXPANDED[$idx]}" = "1" ]; then CAT_EXPANDED[$idx]=0; else CAT_EXPANDED[$idx]=1; fi
+    fi
+}
+
+collapse_left() {
+    read kind idx <<< "$(cur_kind_idx)"
+    if [ "$kind" = "C" ]; then
+        CAT_EXPANDED[$idx]=0
+    else
+        local cat_idx="${ITEM_CATS[$idx]}"
+        CAT_EXPANDED[$cat_idx]=0
+        build_visible_rows
+        local r=0 vr
+        for vr in "${VISIBLE_ROWS[@]}"; do
+            if [ "$vr" = "C:$cat_idx" ]; then CURSOR=$r; break; fi
+            r=$((r + 1))
+        done
+    fi
+}
+
+expand_right() {
+    read kind idx <<< "$(cur_kind_idx)"
+    if [ "$kind" = "C" ]; then
+        CAT_EXPANDED[$idx]=1
+    fi
+}
+
+set_all() {
+    local val=$1 fi
+    for ((fi = 0; fi < NUM_ITEMS; fi++)); do ITEM_SEL[$fi]=$val; done
+}
+
+set_current_category() {
+    local val=$1 cat_idx fi
+    read kind idx <<< "$(cur_kind_idx)"
+    if [ "$kind" = "C" ]; then cat_idx=$idx; else cat_idx="${ITEM_CATS[$idx]}"; fi
+    for fi in ${CAT_ITEM_IDXS[$cat_idx]}; do ITEM_SEL[$fi]=$val; done
+}
+
+# --- Main loop ---
+
+build_visible_rows
+printf '\033[2J'   # one-time full clear at start
+
+while true; do
+    render
+    key="$(read_key)"
+    case "$key" in
+        up)    CURSOR=$((CURSOR - 1)); [ "$CURSOR" -lt 0 ] && CURSOR=0 ;;
+        down)  CURSOR=$((CURSOR + 1)) ;;  # render clamps
+        left)  collapse_left ;;
+        right) expand_right ;;
+        space|enter) toggle_under_cursor ;;
+        a) set_all 1 ;;
+        d) set_all 0 ;;
+        A) set_current_category 1 ;;
+        D) set_current_category 0 ;;
+        readme) view_readme ;;
+        config) view_config ;;
+        go) break ;;
+        quit) printf '\033[2J\033[H'; echo "Cancelled."; exit 0 ;;
+        *) ;;
+    esac
 done
 
-# --- Build the run list from selections ---
+# --- Build run list ---
+
+cleanup
+printf '\033[2J\033[H'
 
 SCRIPTS=()
-for ((i = 0; i < NUM_ITEMS; i++)); do
-    [ "${SEL[$i]}" = "1" ] && SCRIPTS+=("${PATHS[$i]}")
+for ((fi = 0; fi < NUM_ITEMS; fi++)); do
+    [ "${ITEM_SEL[$fi]}" = "1" ] && SCRIPTS+=("${PATHS[$fi]}")
 done
 
 if [ "${#SCRIPTS[@]}" -eq 0 ]; then
-    echo "${C_YELLOW}Nothing selected. Exiting.${C_RESET}"
+    echo "Nothing selected. Exiting."
     exit 0
 fi
 
-# --- Run loop (preserved from original, with selected list) ---
+# --- Run loop (same as install-master.sh) ---
+
+if [ -t 1 ]; then
+    C_BOLD=$'\033[1m'; C_DIM=$'\033[2m'
+    C_GREEN=$'\033[32m'; C_RED=$'\033[31m'; C_RESET=$'\033[0m'
+else
+    C_BOLD=""; C_DIM=""; C_GREEN=""; C_RED=""; C_RESET=""
+fi
 
 SUCCEEDED=()
 FAILED=()
@@ -315,7 +499,7 @@ SKIPPED=()
 LOG_DIR="$(mktemp -d -t mac-install)"
 
 echo
-echo "Logs: $LOG_DIR"
+echo "${C_DIM}Logs: $LOG_DIR${C_RESET}"
 echo "Running ${#SCRIPTS[@]} scripts..."
 echo
 
@@ -326,16 +510,16 @@ for script in "${SCRIPTS[@]}"; do
         SKIPPED+=("$script")
         continue
     fi
-    printf '→ %s\n' "$name"
+    printf '%s→ %s%s\n' "$C_BOLD" "$name" "$C_RESET"
     log_file="$LOG_DIR/${name}.log"
     "$script" 2>&1 | tee "$log_file"
     rc=${PIPESTATUS[0]}
     if [ "$rc" -eq 0 ]; then
         SUCCEEDED+=("$script")
-        printf '  ✓ %s\n' "$name"
+        printf '  %s✓ %s%s\n' "$C_GREEN" "$name" "$C_RESET"
     else
         FAILED+=("$script")
-        printf '  ✗ %s (exit %d) — see %s\n' "$name" "$rc" "$log_file"
+        printf '  %s✗ %s (exit %d) — see %s%s\n' "$C_RED" "$name" "$rc" "$log_file" "$C_RESET"
     fi
     echo
 done
@@ -349,7 +533,7 @@ printf '  Skipped:   %d\n' "${#SKIPPED[@]}"
 echo
 
 if [ "${#FAILED[@]}" -gt 0 ]; then
-    echo "Failed scripts (re-run individually after diagnosing):"
+    echo "Failed scripts:"
     for s in "${FAILED[@]}"; do
         echo "  - $s   (log: $LOG_DIR/$(basename "$s").log)"
     done

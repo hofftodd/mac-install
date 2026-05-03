@@ -100,6 +100,7 @@ These categories match the menu layout in `install-master.sh`.
 - `install-opencode.sh` — opencode, open-source terminal coding agent.
 - `install-little-coder.sh` — little-coder, npm-based AI coding agent CLI.
 - `install-pi.sh` — pi (pi.dev), terminal coding agent (npm; depends on Node).
+- `install-oh-my-pi.sh` — Oh My Pi, AI coding agent for the terminal (hash-anchored edits, LSP, Python, browser, subagents); binary `omp` from [can1357/oh-my-pi](https://github.com/can1357/oh-my-pi).
 - `install-docker-desktop.sh` — Docker Desktop.
 
 ### Productivity

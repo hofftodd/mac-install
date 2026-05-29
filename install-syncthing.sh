@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Syncthing. See https://docs.syncthing.net/users/autostart.html#launchd-macos
-brew install syncthing
+# Syncthing macOS GUI app. See https://syncthing.net/
+if [ -d "/Applications/Syncthing.app" ]; then
+    echo "Syncthing already present at /Applications/Syncthing.app — skipping cask install."
+else
+    brew install --cask syncthing-app
+fi
 
-# Run as a per-user brew service so it starts at login.
-brew services start syncthing
-
-echo "Syncthing installed and enabled as a per-user service."
-echo "Web UI (after first start): http://localhost:8384"
+echo "Syncthing installed."
+echo "Launch Syncthing.app to start the service; web UI: http://localhost:8384"

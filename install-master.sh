@@ -61,6 +61,7 @@ ITEMS=(
     "Terminal experience|./install-nerd-fonts.sh"
     "Terminal experience|./install-starship.sh"
     "Terminal experience|./install-btop.sh"
+    "Terminal experience|./install-ghostty.sh"
 )
 
 # --- Build state (parallel arrays; bash 3.2 compatible) ---

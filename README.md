@@ -134,6 +134,7 @@ These categories match the menu layout in `install-master.sh`.
 - `install-nerd-fonts.sh` — FiraCode, JetBrainsMono, Hack, Meslo, CaskaydiaCove (Nerd Fonts) via brew casks.
 - `install-starship.sh` — Starship prompt with the Gruvbox Rainbow preset.
 - `install-btop.sh` — btop process/resource monitor.
+- `install-ghostty.sh` — Ghostty, fast GPU-accelerated native terminal emulator.
 
 ## Notes
 

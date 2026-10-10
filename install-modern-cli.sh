@@ -23,4 +23,17 @@ eval "$(zoxide init zsh)"
 EOF
 fi
 
+# Replace ls with eza. Separate marker so machines that already have the
+# zoxide block still pick this up on re-run.
+if ! grep -q '# eza aliases' "$HOME/.zshrc" 2>/dev/null; then
+    cat >> "$HOME/.zshrc" <<'EOF'
+
+# eza aliases
+alias ls='eza --group-directories-first --icons=auto'
+alias ll='eza -l --group-directories-first --icons=auto --git'
+alias la='eza -la --group-directories-first --icons=auto --git'
+alias lt='eza --tree --level=2 --icons=auto'
+EOF
+fi
+
 echo "Modern CLI tools installed. Restart your shell or run: source ~/.zshrc"

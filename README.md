@@ -131,7 +131,7 @@ These categories match the menu layout in `install-master.sh`.
 - `install-utm.sh` — UTM, virtual-machines UI built on QEMU.
 
 ### Terminal experience
-- `install-modern-cli.sh` — bundle of modern CLI tools: ripgrep, fd, bat, eza, fzf, zoxide, git-delta, jq, yq, tree, htop, ncdu. Adds zoxide init to `~/.zshrc`.
+- `install-modern-cli.sh` — bundle of modern CLI tools: ripgrep, fd, bat, eza, fzf, zoxide, git-delta, jq, yq, tree, htop, ncdu. Adds zoxide init and eza aliases (`ls`, `ll`, `la`, `lt`) to `~/.zshrc`.
 - `install-nerd-fonts.sh` — FiraCode, JetBrainsMono, Hack, Meslo, CaskaydiaCove (Nerd Fonts) via brew casks.
 - `install-starship.sh` — Starship prompt with the Gruvbox Rainbow preset.
 - `install-btop.sh` — btop process/resource monitor.

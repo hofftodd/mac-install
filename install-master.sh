@@ -49,6 +49,7 @@ ITEMS=(
     "Comms|./install-signal.sh"
 
     "Networking|./install-tailscale.sh"
+    "Networking|./install-freerdp.sh"
 
     "Databases|./install-postgres.sh"
 

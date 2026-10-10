@@ -119,6 +119,7 @@ These categories match the menu layout in `install-master.sh`.
 
 ### Networking
 - `install-tailscale.sh` — Tailscale menu-bar app.
+- `install-freerdp.sh` — FreeRDP, open-source Remote Desktop Protocol client (plus XQuartz for display).
 
 ### Databases
 - `install-postgres.sh` — PostgreSQL (`postgresql@16` by default) plus `pgcli`. Starts as a brew service and creates a database matching your username.

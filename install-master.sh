@@ -50,10 +50,12 @@ ITEMS=(
 
     "Networking|./install-tailscale.sh"
     "Networking|./install-freerdp.sh"
+    "Networking|./install-nas-tools.sh"
 
     "Databases|./install-postgres.sh"
 
     "Sync / utilities|./install-syncthing.sh"
+    "Sync / utilities|./install-unison.sh"
     "Sync / utilities|./install-vlc.sh"
     "Sync / utilities|./install-handbrake.sh"
     "Sync / utilities|./install-utm.sh"

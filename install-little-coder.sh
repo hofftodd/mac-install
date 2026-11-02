@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+source "$(dirname "${BASH_SOURCE[0]}")/lib/zshrc.sh"
+
 # Install little-coder, an AI coding agent CLI distributed as an npm package.
 # See https://github.com/itayinbarr/little-coder
 #
@@ -18,9 +20,9 @@ fi
 
 curl -fsSL https://raw.githubusercontent.com/itayinbarr/little-coder/main/install.sh | bash
 
-if ! grep -q '\.local/bin' "$HOME/.zshrc" 2>/dev/null; then
-    echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.zshrc"
-fi
+install_zshrc_snippet 10-local-bin <<'EOF'
+export PATH="$HOME/.local/bin:$PATH"
+EOF
 
 echo "little-coder installed. Restart your shell or run: source ~/.zshrc"
 echo "Then run: little-coder"

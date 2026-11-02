@@ -139,7 +139,7 @@ These categories match the menu layout in `install-master.sh`.
 - `install-handbrake.sh` — HandBrake (GUI + CLI).
 
 ### Terminal experience
-- `install-modern-cli.sh` — bundle of modern CLI tools: ripgrep, fd, bat, eza, fzf, zoxide, git-delta, jq, yq, tree, htop, ncdu. Adds zoxide init and eza aliases (`ls`, `ll`, `la`, `lt`) to `~/.zshrc`.
+- `install-modern-cli.sh` — bundle of modern CLI tools: ripgrep, fd, bat, eza, fzf, zoxide, git-delta, jq, yq, tree, htop, ncdu. Adds zoxide init and eza aliases (`ls`, `ll`, `la`, `lt`) in `~/.zshrc.d/80-modern-cli.zsh`.
 - `install-nerd-fonts.sh` — FiraCode, JetBrainsMono, Hack, Meslo, CaskaydiaCove (Nerd Fonts) via brew casks.
 - `install-starship.sh` — Starship prompt with the Gruvbox Rainbow preset.
 - `install-btop.sh` — btop process/resource monitor.
@@ -149,5 +149,6 @@ These categories match the menu layout in `install-master.sh`.
 ## Notes
 
 - Scripts assume macOS with Homebrew already installed (run `bootstrap.sh` if not).
-- Most language scripts append shell-init blocks to `~/.zshrc` (pyenv, sdkman, nvm, go). Open a new shell or `source ~/.zshrc` after running.
+- Scripts that need shell setup (nvm, pyenv, SDKMAN, Go, Starship, modern-cli, and the agents that install into `~/.local/bin`) each write their own file to `~/.zshrc.d/`, e.g. `~/.zshrc.d/20-nvm.zsh`. The first one adds a small loader to `~/.zshrc` that sources every `~/.zshrc.d/*.zsh` in name order, so the number prefix sets load order. Re-running a script overwrites its file; deleting the file removes that tool's shell setup. Open a new shell or `source ~/.zshrc` after running.
+- Older versions of these scripts appended directly to `~/.zshrc`. Re-running a script moves its old lines out (exact matches only), backing up the original to `~/.zshrc.mac-install.bak` first. The helper lives in `lib/zshrc.sh`.
 - `brew install` is a no-op when a formula is already installed, so re-running scripts is safe. Cask installs that detect an existing app in `/Applications` (LM Studio, Obsidian, UTM, Ghostty, iTerm2, Rancher Desktop, OrbStack) skip cleanly instead of failing.

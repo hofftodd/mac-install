@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+source "$(dirname "${BASH_SOURCE[0]}")/lib/zshrc.sh"
+
 # Install SDKMAN! and use it to install OpenJDK, Groovy, and Gradle.
 # See https://sdkman.io/
 
@@ -14,14 +16,11 @@ else
     curl -s "https://get.sdkman.io?rcupdate=false" | bash
 fi
 
-if ! grep -q 'sdkman-init.sh' "$HOME/.zshrc" 2>/dev/null; then
-    cat >> "$HOME/.zshrc" <<'EOF'
-
+install_zshrc_snippet 20-sdkman <<'EOF'
 # SDKMAN!
 export SDKMAN_DIR="$HOME/.sdkman"
 [[ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ]] && source "$SDKMAN_DIR/bin/sdkman-init.sh"
 EOF
-fi
 
 export SDKMAN_DIR="$HOME/.sdkman"
 # SDKMAN's shell function and its `sdk` subcommands aren't `set -u` safe;

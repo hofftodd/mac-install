@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+source "$(dirname "${BASH_SOURCE[0]}")/lib/zshrc.sh"
+
 # Starship prompt. See https://starship.rs/
 brew install starship
 
-if ! grep -q 'starship init zsh' "$HOME/.zshrc" 2>/dev/null; then
-    echo 'eval "$(starship init zsh)"' >> "$HOME/.zshrc"
-fi
+install_zshrc_snippet 90-starship <<'EOF'
+eval "$(starship init zsh)"
+EOF
 
 # Apply the Gruvbox Rainbow preset.
 mkdir -p "$HOME/.config"

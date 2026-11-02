@@ -1,29 +1,50 @@
 # shellcheck shell=bash
-# Shared helper for the macos-*.sh scripts. Every setting is proposed one at a
-# time: the script shows the current and proposed value and only changes it if
-# you answer yes. Settings that already have the proposed value are skipped
-# without asking.
+# Shared helper for the macos-*.sh scripts.
 #
-# Before a setting is changed for the first time, its original value is
-# recorded in ~/.mac-install/restore-macos-defaults.sh, so running that script
-# puts everything back the way it was.
+# Each script registers its settings, then calls run_settings "$@":
 #
-# Usage, from a macos-*.sh script:
 #   source "$(dirname "${BASH_SOURCE[0]}")/lib/macos-defaults.sh"
-#   require_macos
-#   propose "Show all file extensions" NSGlobalDomain AppleShowAllExtensions bool true
-#   macos_settings_done Finder        # restarts Finder if anything changed
+#   setting tilesize "Dock icon size: 48 px" com.apple.dock tilesize int 48
+#   run_settings "$@"
+#   macos_settings_done Dock          # restarts the Dock if anything changed
 #
-# propose takes a description followed by one or more groups of four:
-#   <domain> <key> <type> <value>     type: bool | int | float | string
-# A domain written as currentHost:<domain> uses `defaults -currentHost`.
-# All groups in one call are applied together under a single prompt.
+# How a script behaves depends on its arguments:
+#   --list         print "id|label" for each setting (install-master.sh uses
+#                  this to show every setting as its own checkbox)
+#   <id>...        apply exactly these settings, without asking (what
+#                  install-master.sh passes for the boxes you ticked)
+#   (no args)      run on its own: propose each setting in turn, showing the
+#                  current and new value, and apply it only if you answer y
+# Settings that already have the new value are left alone either way.
+#
+# setting <id> <label> <domain> <key> <type> <value> [<domain> <key> <type> <value>]...
+#   type: bool | int | float | string
+#   A domain written as currentHost:<domain> uses `defaults -currentHost`.
+#   All the writes in one setting are applied together.
+#
+# custom_setting <id> <label> <function>
+#   For changes that aren't `defaults` values. The function is called with
+#   "is_set" (return 0 if already done), "describe" (print what would change)
+#   or "apply".
+#
+# Before a `defaults` value is changed for the first time, its original value
+# is recorded in ~/.mac-install/restore-macos-defaults.sh, so running that
+# script puts everything back.
 #
 # Bash 3.2 compatible (macOS /bin/bash).
 
 MACOS_RESTORE_DIR="${MACOS_RESTORE_DIR:-$HOME/.mac-install}"
 MACOS_RESTORE_FILE="$MACOS_RESTORE_DIR/restore-macos-defaults.sh"
 _MACOS_CHANGED=0
+
+# Registered settings (parallel arrays). For `defaults` settings, the writes
+# live in _S_SPECS, groups of four starting at _S_START for _S_LEN entries.
+_S_IDS=()
+_S_LABELS=()
+_S_FUNCS=()
+_S_START=()
+_S_LEN=()
+_S_SPECS=()
 
 require_macos() {
     if [ "$(uname -s)" != "Darwin" ]; then
@@ -44,6 +65,29 @@ ask() {
         [yY] | [yY][eE][sS]) return 0 ;;
         *) return 1 ;;
     esac
+}
+
+setting() {
+    local id="$1" label="$2"
+    shift 2
+    if [ "$#" -eq 0 ] || [ $(($# % 4)) -ne 0 ]; then
+        echo "setting $id: expected groups of <domain> <key> <type> <value>" >&2
+        exit 1
+    fi
+    _S_IDS+=("$id")
+    _S_LABELS+=("$label")
+    _S_FUNCS+=("")
+    _S_START+=("${#_S_SPECS[@]}")
+    _S_LEN+=("$#")
+    _S_SPECS+=("$@")
+}
+
+custom_setting() {
+    _S_IDS+=("$1")
+    _S_LABELS+=("$2")
+    _S_FUNCS+=("$3")
+    _S_START+=(0)
+    _S_LEN+=(0)
 }
 
 # _defaults <verb> <domain> [args...] — `defaults`, honouring currentHost:<domain>.
@@ -106,7 +150,7 @@ restore_append() {
     } >> "$MACOS_RESTORE_FILE"
 }
 
-# _record_restore <domain> <key> — record how to put this setting back.
+# _record_restore <domain> <key> — record how to put this value back.
 _record_restore() {
     local domain="$1" key="$2" d="$1" hostflag="" cur type flag line
     case "$domain" in
@@ -138,21 +182,16 @@ _record_restore() {
     restore_append "$domain $key" "$line"
 }
 
-# propose "<description>" <domain> <key> <type> <value> [<domain> <key> <type> <value>]...
-propose() {
-    local desc="$1"
-    shift
-    local n=$# i domain key type value want cur shown
-    local -a specs=("$@") changes=()
-
-    if [ "$n" -eq 0 ] || [ $((n % 4)) -ne 0 ]; then
-        echo "propose: expected groups of <domain> <key> <type> <value> for: $desc" >&2
-        return 1
-    fi
-
-    for ((i = 0; i < n; i += 4)); do
-        domain="${specs[i]}" key="${specs[i + 1]}" type="${specs[i + 2]}" value="${specs[i + 3]}"
-        want="$(_norm "$type" "$value")"
+# _pending <index> — set _PENDING to the "domain key: old → new" lines for the
+# values in this setting that differ from what it wants (empty if all match).
+_pending() {
+    local idx="$1" i end domain key type want cur shown
+    _PENDING=()
+    i="${_S_START[$idx]}"
+    end=$((i + ${_S_LEN[$idx]}))
+    for (( ; i < end; i += 4)); do
+        domain="${_S_SPECS[i]}" key="${_S_SPECS[i + 1]}" type="${_S_SPECS[i + 2]}"
+        want="$(_norm "$type" "${_S_SPECS[i + 3]}")"
         if cur="$(_defaults read "$domain" "$key" 2>/dev/null)"; then
             cur="$(_norm "$type" "$cur")"
             [ "$cur" = "$want" ] && continue
@@ -160,32 +199,95 @@ propose() {
         else
             shown="not set (macOS default)"
         fi
-        changes+=("    ${domain#currentHost:} $key: $shown → $(_show "$type" "$want")")
+        _PENDING+=("    ${domain#currentHost:} $key: $shown → $(_show "$type" "$want")")
     done
+}
 
-    if [ "${#changes[@]}" -eq 0 ]; then
-        echo "✓ $desc (already set)"
+# _write <index> — record originals and write every value in this setting.
+_write() {
+    local idx="$1" i end domain key
+    i="${_S_START[$idx]}"
+    end=$((i + ${_S_LEN[$idx]}))
+    for (( ; i < end; i += 4)); do
+        domain="${_S_SPECS[i]}" key="${_S_SPECS[i + 1]}"
+        _record_restore "$domain" "$key"
+        _defaults write "$domain" "$key" "-${_S_SPECS[i + 2]}" "${_S_SPECS[i + 3]}"
+    done
+}
+
+# _handle <index> <ask|apply> — check one setting, then ask about it or apply it.
+_handle() {
+    local idx="$1" mode="$2" label="${_S_LABELS[$1]}" fn="${_S_FUNCS[$1]}"
+    if [ -n "$fn" ]; then
+        if "$fn" is_set; then
+            echo "✓ $label (already set)"
+            return 0
+        fi
+        if [ "$mode" = ask ]; then
+            echo
+            echo "• $label"
+            "$fn" describe
+            if ! ask "  Apply?"; then echo "  – skipped"; return 0; fi
+        fi
+        "$fn" apply
+    else
+        _pending "$idx"
+        if [ "${#_PENDING[@]}" -eq 0 ]; then
+            echo "✓ $label (already set)"
+            return 0
+        fi
+        if [ "$mode" = ask ]; then
+            echo
+            echo "• $label"
+            printf '%s\n' "${_PENDING[@]}"
+            if ! ask "  Apply?"; then echo "  – skipped"; return 0; fi
+        fi
+        _write "$idx"
+    fi
+    _MACOS_CHANGED=1
+    if [ "$mode" = ask ]; then echo "  ✓ applied"; else echo "✓ $label"; fi
+}
+
+# run_settings "$@" — see the top of this file.
+run_settings() {
+    local i id found
+    if [ "${1:-}" = "--list" ]; then
+        for ((i = 0; i < ${#_S_IDS[@]}; i++)); do
+            printf '%s|%s\n' "${_S_IDS[i]}" "${_S_LABELS[i]}"
+        done
+        exit 0
+    fi
+
+    require_macos
+
+    if [ "$#" -eq 0 ]; then
+        for ((i = 0; i < ${#_S_IDS[@]}; i++)); do
+            _handle "$i" ask
+        done
         return 0
     fi
 
-    echo
-    echo "• $desc"
-    printf '%s\n' "${changes[@]}"
-    if ask "  Apply?"; then
-        for ((i = 0; i < n; i += 4)); do
-            domain="${specs[i]}" key="${specs[i + 1]}" type="${specs[i + 2]}" value="${specs[i + 3]}"
-            _record_restore "$domain" "$key"
-            _defaults write "$domain" "$key" "-$type" "$value"
+    # Check every id first, so a typo doesn't leave a half-applied group.
+    for id in "$@"; do
+        found=0
+        for ((i = 0; i < ${#_S_IDS[@]}; i++)); do
+            [ "${_S_IDS[i]}" = "$id" ] && found=1
         done
-        _MACOS_CHANGED=1
-        echo "  ✓ applied"
-    else
-        echo "  – skipped"
-    fi
+        if [ "$found" = 0 ]; then
+            echo "Unknown setting: $id (run $(basename "$0") --list to see them)" >&2
+            exit 1
+        fi
+    done
+    # Apply in the order the script defines them.
+    for ((i = 0; i < ${#_S_IDS[@]}; i++)); do
+        for id in "$@"; do
+            if [ "${_S_IDS[i]}" = "$id" ]; then
+                _handle "$i" apply
+                break
+            fi
+        done
+    done
 }
-
-# mark_changed — for scripts that change something without propose().
-mark_changed() { _MACOS_CHANGED=1; }
 
 # macos_settings_done [<app>...] — restart the given apps (Finder, Dock,
 # SystemUIServer) so changes show up, but only if something was changed.

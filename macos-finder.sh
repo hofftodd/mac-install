@@ -2,30 +2,32 @@
 set -euo pipefail
 
 source "$(dirname "${BASH_SOURCE[0]}")/lib/macos-defaults.sh"
-require_macos
 
-# Finder. Each setting is proposed separately; answer y to apply.
-echo "macOS settings: Finder"
+# macOS settings: Finder.
+# Run with no arguments to be asked about each setting, with setting ids to
+# apply just those, or with --list to see the ids. install-master.sh shows each
+# setting as its own checkbox.
 
-propose "Show all file extensions" \
+setting show-extensions "Show all file extensions" \
     NSGlobalDomain AppleShowAllExtensions bool true
-propose "Show hidden files (dotfiles); you can still toggle with Cmd+Shift+." \
+setting show-hidden "Show hidden files (Cmd+Shift+. toggles)" \
     com.apple.finder AppleShowAllFiles bool true
-propose "Show the path bar at the bottom of Finder windows" \
+setting path-bar "Show path bar" \
     com.apple.finder ShowPathbar bool true
-propose "Show the status bar (item count and free space)" \
+setting status-bar "Show status bar" \
     com.apple.finder ShowStatusBar bool true
-propose "Use list view in new Finder windows" \
+setting list-view "New windows use list view" \
     com.apple.finder FXPreferredViewStyle string Nlsv
-propose "Keep folders above files when sorting by name" \
+setting folders-first "Folders above files when sorting" \
     com.apple.finder _FXSortFoldersFirst bool true
-propose "Search the current folder by default (instead of the whole Mac)" \
+setting search-current-folder "Search the current folder by default" \
     com.apple.finder FXDefaultSearchScope string SCcf
-propose "Don't warn when changing a file extension" \
+setting no-extension-warning "No warning when changing an extension" \
     com.apple.finder FXEnableExtensionChangeWarning bool false
-propose "Don't create .DS_Store files on network drives" \
+setting no-ds-store-network "No .DS_Store files on network drives" \
     com.apple.desktopservices DSDontWriteNetworkStores bool true
-propose "Don't create .DS_Store files on USB drives" \
+setting no-ds-store-usb "No .DS_Store files on USB drives" \
     com.apple.desktopservices DSDontWriteUSBStores bool true
 
+run_settings "$@"
 macos_settings_done Finder

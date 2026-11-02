@@ -2,20 +2,22 @@
 set -euo pipefail
 
 source "$(dirname "${BASH_SOURCE[0]}")/lib/macos-defaults.sh"
-require_macos
 
-# Dock and Spaces. Each setting is proposed separately; answer y to apply.
-echo "macOS settings: Dock and Spaces"
+# macOS settings: Dock and Spaces.
+# Run with no arguments to be asked about each setting, with setting ids to
+# apply just those, or with --list to see the ids. install-master.sh shows each
+# setting as its own checkbox.
 
-propose "Automatically hide the Dock" \
+setting autohide "Auto-hide the Dock" \
     com.apple.dock autohide bool true
-propose "Show the hidden Dock immediately, with no delay" \
+setting autohide-delay "Hidden Dock appears instantly (no delay)" \
     com.apple.dock autohide-delay float 0
-propose "Smaller Dock icons (48 px)" \
+setting tilesize "Dock icon size: 48 px" \
     com.apple.dock tilesize int 48
-propose "Don't show recently used apps in the Dock" \
+setting no-recents "No recent apps in the Dock" \
     com.apple.dock show-recents bool false
-propose "Keep Spaces in a fixed order (don't rearrange by most recent use)" \
+setting fixed-spaces "Spaces stay in a fixed order" \
     com.apple.dock mru-spaces bool false
 
+run_settings "$@"
 macos_settings_done Dock

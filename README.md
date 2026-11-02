@@ -147,7 +147,15 @@ These categories match the menu layout in `install-master.sh`.
 - `install-iterm2.sh` — iTerm2, feature-rich terminal emulator for macOS.
 
 ### macOS settings
-These change macOS settings rather than installing software. Each script proposes its settings **one at a time**, shows the current and proposed value, and only changes it if you answer `y` (the default is no). Settings that already match are skipped without asking. Before a setting is changed for the first time, its original value is saved to `~/.mac-install/restore-macos-defaults.sh`; run that to undo everything. The shared helper is `lib/macos-defaults.sh`.
+These change macOS settings rather than installing software. In `install-master.sh` each group is a collapsed category (`macOS: Dock`, `macOS: Finder`, …) and **each setting is its own checkbox**, labelled with the value it sets. They all start unticked: tick the ones you want and they're applied without further prompts. Settings that already have that value are left alone.
+
+The scripts also work on their own:
+- `./macos-dock.sh` — asks about each setting in turn, showing the current and new value (default is no).
+- `./macos-dock.sh tilesize no-recents` — applies just those settings, without asking.
+- `./macos-dock.sh --list` — lists the setting ids and labels.
+
+Before a setting is changed for the first time, its original value is saved to `~/.mac-install/restore-macos-defaults.sh`; run that to undo everything. The shared helper is `lib/macos-defaults.sh`.
+
 - `macos-keyboard.sh` — fast key repeat and short repeat delay, key repeat instead of the accent picker, and smart quotes, smart dashes, auto-capitalisation, auto-correct and double-space period turned off. Key repeat needs a logout.
 - `macos-finder.sh` — show file extensions, hidden files, path bar and status bar; list view; folders first; search the current folder; no extension-change warning; no `.DS_Store` files on network or USB drives. Restarts Finder.
 - `macos-dock.sh` — auto-hide with no delay, 48 px icons, no recent apps, Spaces in a fixed order. Restarts the Dock.

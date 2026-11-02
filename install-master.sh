@@ -72,13 +72,16 @@ ITEMS=(
     "Terminal experience|./install-ghostty.sh"
     "Terminal experience|./install-iterm2.sh"
 
-    "macOS settings|./macos-keyboard.sh"
-    "macOS settings|./macos-finder.sh"
-    "macOS settings|./macos-dock.sh"
-    "macOS settings|./macos-screenshots.sh"
-    "macOS settings|./macos-trackpad.sh"
-    "macOS settings|./macos-security.sh"
-    "macOS settings|./macos-misc.sh"
+    # "settings:" entries expand into one checkbox per setting, read from the
+    # script's --list output. Ticked settings are passed to the script by id
+    # and applied without further prompts.
+    "macOS: keyboard|settings:./macos-keyboard.sh"
+    "macOS: Finder|settings:./macos-finder.sh"
+    "macOS: Dock|settings:./macos-dock.sh"
+    "macOS: screenshots|settings:./macos-screenshots.sh"
+    "macOS: trackpad|settings:./macos-trackpad.sh"
+    "macOS: security|settings:./macos-security.sh"
+    "macOS: dialogs & devices|settings:./macos-misc.sh"
 )
 
 # Scripts that start unticked in the menu. Docker Desktop, Rancher Desktop and
@@ -101,29 +104,24 @@ ITEM_NAMES=()
 ITEM_CATS=()
 ITEM_SEL=()
 
-for entry in "${ITEMS[@]}"; do
-    cat="${entry%%|*}"
-    path="${entry#*|}"
-
-    cat_idx=-1
+# add_item <category> <command> <label> <selected 0|1> <expanded 0|1>
+# <command> is a script path, optionally followed by a setting id.
+add_item() {
+    local cat="$1" cmd="$2" label="$3" sel="$4" expanded="$5" cat_idx=-1 flat_idx i
     for ((i = 0; i < ${#CAT_NAMES[@]}; i++)); do
         if [ "${CAT_NAMES[$i]}" = "$cat" ]; then cat_idx=$i; break; fi
     done
     if [ $cat_idx -lt 0 ]; then
         cat_idx=${#CAT_NAMES[@]}
         CAT_NAMES+=("$cat")
-        CAT_EXPANDED+=(1)
+        CAT_EXPANDED+=("$expanded")
         CAT_ITEM_IDXS+=("")
     fi
 
     flat_idx=${#PATHS[@]}
-    PATHS+=("$path")
-    ITEM_NAMES+=("$(basename "$path")")
+    PATHS+=("$cmd")
+    ITEM_NAMES+=("$label")
     ITEM_CATS+=("$cat_idx")
-    sel=1
-    for off in "${DEFAULT_OFF[@]}"; do
-        if [ "$off" = "$path" ]; then sel=0; break; fi
-    done
     ITEM_SEL+=("$sel")
 
     if [ -z "${CAT_ITEM_IDXS[$cat_idx]}" ]; then
@@ -131,6 +129,29 @@ for entry in "${ITEMS[@]}"; do
     else
         CAT_ITEM_IDXS[$cat_idx]="${CAT_ITEM_IDXS[$cat_idx]} $flat_idx"
     fi
+}
+
+for entry in "${ITEMS[@]}"; do
+    cat="${entry%%|*}"
+    path="${entry#*|}"
+
+    case "$path" in
+        settings:*)
+            # One checkbox per setting; unticked and collapsed by default, since
+            # these change macOS itself and are a matter of taste.
+            script="${path#settings:}"
+            while IFS='|' read -r id label; do
+                [ -n "$id" ] && add_item "$cat" "$script $id" "$label" 0 0
+            done < <("$script" --list 2>/dev/null)
+            ;;
+        *)
+            sel=1
+            for off in "${DEFAULT_OFF[@]}"; do
+                if [ "$off" = "$path" ]; then sel=0; break; fi
+            done
+            add_item "$cat" "$path" "$(basename "$path")" "$sel" 1
+            ;;
+    esac
 done
 
 NUM_ITEMS=${#PATHS[@]}
@@ -158,7 +179,7 @@ build_visible_rows() {
 cleanup() { printf '\033[?25h\033[?7h'; stty "$STTY_SAVED" 2>/dev/null; }
 STTY_SAVED="$(stty -g 2>/dev/null || echo)"
 trap cleanup EXIT INT TERM
-printf '\033[?25l'   # hide cursor
+printf '\033[?25l\033[?7l'   # hide cursor; clip long lines instead of wrapping
 
 # --- Render ---
 
@@ -506,9 +527,20 @@ done
 cleanup
 printf '\033[2J\033[H'
 
+# Each entry is a command: a script path, optionally followed by setting ids.
+# Ticked settings from the same script are combined into one run, so the
+# script applies them together (and restarts Finder/Dock only once).
 SCRIPTS=()
 for ((fi = 0; fi < NUM_ITEMS; fi++)); do
-    [ "${ITEM_SEL[$fi]}" = "1" ] && SCRIPTS+=("${PATHS[$fi]}")
+    [ "${ITEM_SEL[$fi]}" = "1" ] || continue
+    cmd="${PATHS[$fi]}"
+    last=$((${#SCRIPTS[@]} - 1))
+    if [ "$cmd" != "${cmd%% *}" ] && [ "$last" -ge 0 ] \
+        && [ "${SCRIPTS[$last]%% *}" = "${cmd%% *}" ] && [ "${SCRIPTS[$last]}" != "${SCRIPTS[$last]%% *}" ]; then
+        SCRIPTS[$last]="${SCRIPTS[$last]} ${cmd#* }"
+    else
+        SCRIPTS+=("$cmd")
+    fi
 done
 
 if [ "${#SCRIPTS[@]}" -eq 0 ]; then
@@ -535,7 +567,10 @@ echo "${C_DIM}Logs: $LOG_DIR${C_RESET}"
 echo "Running ${#SCRIPTS[@]} scripts..."
 echo
 
-for script in "${SCRIPTS[@]}"; do
+for cmd in "${SCRIPTS[@]}"; do
+    script="${cmd%% *}"
+    args=()
+    [ "$cmd" != "$script" ] && read -r -a args <<< "${cmd#* }"
     name="$(basename "$script")"
     if [ ! -x "$script" ]; then
         printf '  ? %-32s (not executable, skipped)\n' "$name"
@@ -544,7 +579,7 @@ for script in "${SCRIPTS[@]}"; do
     fi
     printf '%s→ %s%s\n' "$C_BOLD" "$name" "$C_RESET"
     log_file="$LOG_DIR/${name}.log"
-    "$script" 2>&1 | tee "$log_file"
+    "$script" ${args[@]+"${args[@]}"} 2>&1 | tee "$log_file"
     rc=${PIPESTATUS[0]}
     if [ "$rc" -eq 0 ]; then
         SUCCEEDED+=("$script")

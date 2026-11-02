@@ -2,27 +2,29 @@
 set -euo pipefail
 
 source "$(dirname "${BASH_SOURCE[0]}")/lib/macos-defaults.sh"
-require_macos
 
-# Keyboard and text input. Each setting is proposed separately; answer y to apply.
-echo "macOS settings: keyboard and text input"
+# macOS settings: keyboard and text input.
+# Run with no arguments to be asked about each setting, with setting ids to
+# apply just those, or with --list to see the ids. install-master.sh shows each
+# setting as its own checkbox.
 
-propose "Fast key repeat (the fastest rate System Settings allows)" \
+setting key-repeat "Key repeat rate: fastest (2)" \
     NSGlobalDomain KeyRepeat int 2
-propose "Short delay before a held key starts repeating" \
+setting key-repeat-delay "Delay until key repeat: shortest (15)" \
     NSGlobalDomain InitialKeyRepeat int 15
-propose "Holding a key repeats it instead of showing the accent picker (useful for Vim keys)" \
+setting press-and-hold "Held keys repeat (no accent picker)" \
     NSGlobalDomain ApplePressAndHoldEnabled bool false
-propose "Turn off smart quotes (stops \" becoming curly quotes when typing code)" \
+setting smart-quotes "Smart quotes: off" \
     NSGlobalDomain NSAutomaticQuoteSubstitutionEnabled bool false
-propose "Turn off smart dashes (stops -- becoming an em dash)" \
+setting smart-dashes "Smart dashes: off" \
     NSGlobalDomain NSAutomaticDashSubstitutionEnabled bool false
-propose "Turn off automatic capitalisation" \
+setting auto-capitalise "Auto-capitalisation: off" \
     NSGlobalDomain NSAutomaticCapitalizationEnabled bool false
-propose "Turn off automatic spelling correction" \
+setting auto-correct "Auto-correct: off" \
     NSGlobalDomain NSAutomaticSpellingCorrectionEnabled bool false
-propose "Turn off adding a period when you type two spaces" \
+setting double-space-period "Double-space inserts period: off" \
     NSGlobalDomain NSAutomaticPeriodSubstitutionEnabled bool false
 
+run_settings "$@"
 macos_settings_done
 echo "Key repeat changes take effect after you log out and back in."

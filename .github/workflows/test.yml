@@ -28,6 +28,8 @@ jobs:
           shellcheck -x -S warning *.sh lib/*.sh tests/*.sh
       - name: menu, scripts and README are consistent
         run: tests/check-menu.sh
+      - name: every Homebrew/npm package referenced still exists and isn't deprecated
+        run: python3 tests/check-packages.py
 
   macos-settings:
     name: macOS settings (applied for real, then restored)

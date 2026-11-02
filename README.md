@@ -68,6 +68,7 @@ JAVA_VERSION=21.0.5-tem     ./install-sdkman.sh
 BACKEND=cpu                 ./install-llamacpp.sh   # default is metal
 PG_FORMULA=postgresql@17    ./install-postgres.sh
 LITTLE_CODER_VERSION=1.20.0 ./install-little-coder.sh
+PI_VERSION=1.5.0            ./install-pi.sh
 OMP_VERSION=v18.16.0        ./install-oh-my-pi.sh
 ```
 
@@ -76,7 +77,7 @@ OMP_VERSION=v18.16.0        ./install-oh-my-pi.sh
 These categories match the menu layout in `install-master.sh`.
 
 ### Setup
-- `update-versions.sh` — look up the latest nvm release and PostgreSQL major version and save them to `~/.mac-install/versions.env` for the install scripts (via `lib/versions.sh`). Also reports when little-coder or Oh My Pi has a newer release than the one pinned in its script, without changing the pin. Never edits the repo.
+- `update-versions.sh` — look up the latest nvm release and PostgreSQL major version and save them to `~/.mac-install/versions.env` for the install scripts (via `lib/versions.sh`). Also reports when little-coder, pi or Oh My Pi has a newer release than the one pinned in its script, without changing the pin. Never edits the repo.
 
 ### Git / GitHub
 - `install-git-config.sh` — global git config: `user.name`/`user.email` (prompts if not set), modern defaults, aliases. Installs and sets up `micro` as the editor and `git-delta` as the pager.
@@ -105,7 +106,7 @@ These categories match the menu layout in `install-master.sh`.
 - `install-claude-code.sh` — Claude Code CLI (Anthropic).
 - `install-opencode.sh` — opencode, open-source terminal coding agent.
 - `install-little-coder.sh` — little-coder, npm-based AI coding agent CLI (needs Node 22.19+). Pinned to a release (`LITTLE_CODER_VERSION`, installed with `npm install -g little-coder@<version>`) rather than piping the project's install script from its main branch.
-- `install-pi.sh` — pi (pi.dev), terminal coding agent (npm; depends on Node).
+- `install-pi.sh` — pi (pi.dev), terminal coding agent, from npm (`@earendil-works/pi-coding-agent`; needs Node 22.19+). Pinned to a release (`PI_VERSION`). Removes the old, deprecated `@mariozechner/pi-coding-agent` if it's installed, since both provide the `pi` command.
 - `install-oh-my-pi.sh` — Oh My Pi, AI coding agent for the terminal (hash-anchored edits, LSP, Python, browser, subagents); binary `omp` from [can1357/oh-my-pi](https://github.com/can1357/oh-my-pi). Pinned to a release (`OMP_VERSION`): the installer is fetched from that release tag and installs its prebuilt binary after checking its sha256.
 
 ### VMs and virtualization
@@ -175,6 +176,7 @@ Before a setting is changed for the first time, its original value is saved to `
 GitHub Actions (`.github/workflows/test.yml`) runs on every push, on pull requests, and weekly (to catch upstream changes such as renamed casks):
 
 - **shellcheck + consistency** (Linux): shellcheck on every script, and `tests/check-menu.sh`, which checks that every menu item points at an executable script and every script is in the menu and this README.
+- **Package check** (Linux): `tests/check-packages.py` reads the scripts and checks every Homebrew formula and cask, the croft tap formula, and each pinned npm package and version against its registry. It fails if anything is missing, deprecated or disabled. Most install scripts are too slow to run in CI, so this is what catches upstream renames, such as pi's npm package moving, within a week, via the weekly run.
 - **macOS settings** (real Mac runner): `tests/macos-settings.sh` applies a sample of settings from each group for real, checks them with `defaults`/`pmset`, re-runs them (must report "already set"), checks that asking with no terminal and unknown ids change nothing, then runs the generated restore script and checks every original value came back.
 - **macOS installs** (real Mac runner): `tests/installs.sh` runs a representative set of install scripts twice (the second run checks they're safe to re-run), then opens a zsh and checks the tools are on PATH, `python3` is uv's, `psql` connects, tab completion is on, PATH has no duplicates, and the checkout is still clean.
 

@@ -2,9 +2,19 @@
 set -euo pipefail
 
 source "$(dirname "${BASH_SOURCE[0]}")/lib/zshrc.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lib/brew.sh"
 
 # Install SDKMAN! and use it to install OpenJDK, Groovy, and Gradle.
 # See https://sdkman.io/
+
+# SDKMAN (its installer and the `sdk` command) needs Bash 4+, but macOS only
+# ships Bash 3.2 as /bin/bash. Install Homebrew's bash and re-run this script
+# with it. (Your login shell stays zsh; SDKMAN supports zsh directly.)
+if [ "${BASH_VERSINFO[0]}" -lt 4 ]; then
+    ensure_brew_on_path
+    brew install bash
+    exec "$(brew --prefix)/bin/bash" "$0" "$@"
+fi
 
 # zip/unzip ship with macOS; curl too. Nothing extra to install.
 
@@ -13,7 +23,8 @@ if [ -d "$HOME/.sdkman" ]; then
     echo "SDKMAN! already installed at $HOME/.sdkman — skipping installer."
     SDKMAN_PREEXISTING=1
 else
-    curl -s "https://get.sdkman.io?rcupdate=false" | bash
+    # Feed the installer to this (4+) bash, not whatever `bash` is first on PATH.
+    curl -s "https://get.sdkman.io?rcupdate=false" | "$BASH"
 fi
 
 install_zshrc_snippet 20-sdkman <<'EOF'

@@ -76,6 +76,9 @@ for tool in uv python3 cargo rustc rust-analyzer go node bun java gradle psql st
     zcheck "$tool on PATH" "command -v $tool"
 done
 zcheck "python3 is uv's"        '[[ "$(command -v python3)" == "$HOME/.local/bin/python3" ]] && python3 --version'
+# /usr/bin/java is Apple's placeholder that only offers to install Java.
+zcheck "java is SDKMAN's and runs" '[[ "$(command -v java)" == "$HOME/.sdkman/"* ]] && java -version 2>&1 | head -1'
+zcheck "rustc runs"             'rustc --version'
 zcheck "psql connects"          'psql -d postgres -tAc "select 1"'
 zcheck "tab completion is on"   '(( $+functions[compdef] ))'
 zcheck "uv completion loaded"   '[[ -n "${_comps[uv]:-}" ]]'

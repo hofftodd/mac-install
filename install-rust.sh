@@ -12,22 +12,31 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib/zshrc.sh"
 RUST_TOOLCHAIN="${RUST_TOOLCHAIN:-stable}"
 
 CARGO_BIN="$HOME/.cargo/bin"
+OTHER_RUSTUP="$(command -v rustup 2>/dev/null || true)"
 
 if [ -x "$CARGO_BIN/rustup" ]; then
+    RUSTUP="$CARGO_BIN/rustup"
     echo "rustup already installed — updating toolchains..."
-    "$CARGO_BIN/rustup" self update || true   # no-op if rustup came from a package manager
-    "$CARGO_BIN/rustup" update
+    "$RUSTUP" self update || true   # no-op if rustup came from a package manager
+    "$RUSTUP" update
+elif [ -n "$OTHER_RUSTUP" ]; then
+    # rustup installed another way (e.g. Homebrew's rustup formula). Use it
+    # rather than installing a second, competing copy.
+    RUSTUP="$OTHER_RUSTUP"
+    echo "Using the rustup already installed at $RUSTUP — updating toolchains..."
+    "$RUSTUP" update
 else
     # --no-modify-path: shell setup goes in ~/.zshrc.d instead (below).
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
         | sh -s -- -y --no-modify-path --default-toolchain "$RUST_TOOLCHAIN" --profile default
+    RUSTUP="$CARGO_BIN/rustup"
 fi
 
 export PATH="$CARGO_BIN:$PATH"
-rustup default "$RUST_TOOLCHAIN"
+"$RUSTUP" default "$RUST_TOOLCHAIN"
 # The default profile includes rustc, cargo, rustfmt and clippy; add the
 # language server that editors (VS Code, Zed, Helix, croft...) use.
-rustup component add rust-analyzer
+"$RUSTUP" component add rust-analyzer
 
 install_zshrc_snippet 20-rust <<'SNIPPET'
 # Puts ~/.cargo/bin (cargo, rustc, rustup, and anything from `cargo install`) on PATH.

@@ -18,6 +18,13 @@ if [ -z "$GIT_USER_NAME" ] || [ -z "$GIT_USER_EMAIL" ]; then
     exit 1
 fi
 
+# The config below uses micro as the editor and delta as the pager; install
+# them here so that works even though the menu runs this before the Editors
+# and Terminal categories.
+source "$(dirname "${BASH_SOURCE[0]}")/lib/brew.sh"
+ensure_brew_on_path
+brew install micro git-delta
+
 git config --global user.name "$GIT_USER_NAME"
 git config --global user.email "$GIT_USER_EMAIL"
 
@@ -33,7 +40,7 @@ git config --global rerere.enabled true
 git config --global diff.colorMoved zebra
 git config --global merge.conflictStyle zdiff3
 
-# Use git-delta as the pager if it's installed (from install-modern-cli.sh).
+# Use git-delta as the pager (installed above).
 if command -v delta >/dev/null 2>&1; then
     git config --global core.pager 'delta'
     git config --global interactive.diffFilter 'delta --color-only'

@@ -47,15 +47,19 @@ if [ -z "${JAVA_VERSION:-}" ]; then
 fi
 : "${JAVA_VERSION:?Could not resolve a Temurin Java identifier from 'sdk list java'}"
 
-if sdk current java >/dev/null 2>&1; then
-    echo "java already installed: $(sdk current java)"
+# `sdk current <candidate>` exits 0 even when nothing is installed, so check
+# for the candidate's `current` link instead.
+sdk_has() { [ -e "$SDKMAN_DIR/candidates/$1/current" ]; }
+
+if sdk_has java; then
+    echo "java already installed: $(readlink "$SDKMAN_DIR/candidates/java/current" | xargs basename)"
 else
     sdk install java "$JAVA_VERSION"
 fi
 
 for candidate in groovy gradle; do
-    if sdk current "$candidate" >/dev/null 2>&1; then
-        echo "$candidate already installed: $(sdk current "$candidate")"
+    if sdk_has "$candidate"; then
+        echo "$candidate already installed: $(readlink "$SDKMAN_DIR/candidates/$candidate/current" | xargs basename)"
     else
         sdk install "$candidate"
     fi

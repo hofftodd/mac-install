@@ -7,6 +7,11 @@
 # Each sub-script has its own `set -e`, so a failed script aborts itself
 # before causing harm — we record it and move on.
 
+source "$(dirname "${BASH_SOURCE[0]}")/lib/brew.sh"
+# Scripts inherit this, so they work even if this shell doesn't have
+# Homebrew on PATH yet (e.g. a new terminal before ~/.zprofile was set up).
+ensure_brew_on_path
+
 ITEMS=(
     "Setup|./update-versions.sh"
 

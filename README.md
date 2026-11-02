@@ -105,11 +105,12 @@ These categories match the menu layout in `install-master.sh`.
 - `install-pi.sh` — pi (pi.dev), terminal coding agent (npm; depends on Node).
 - `install-oh-my-pi.sh` — Oh My Pi, AI coding agent for the terminal (hash-anchored edits, LSP, Python, browser, subagents); binary `omp` from [can1357/oh-my-pi](https://github.com/can1357/oh-my-pi).
 
-### Containerization
+### VMs and virtualization
 - `install-docker-desktop.sh` — Docker Desktop.
 - `install-rancher-desktop.sh` — Rancher Desktop, containers plus local Kubernetes (`rancher` cask).
 - `install-orbstack.sh` — OrbStack, lightweight Docker and Linux VMs for macOS.
 - `install-lima.sh` — Lima, Linux VMs on macOS (containerd/nerdctl included). Doesn't create a VM; run `limactl start` afterward.
+- `install-utm.sh` — UTM, virtual-machines UI built on QEMU.
 
 ### Productivity
 - `install-obsidian.sh` — Obsidian.
@@ -136,7 +137,6 @@ These categories match the menu layout in `install-master.sh`.
 - `install-syncthing.sh` — Syncthing (per-user `brew services` agent).
 - `install-vlc.sh` — VLC media player.
 - `install-handbrake.sh` — HandBrake (GUI + CLI).
-- `install-utm.sh` — UTM, virtual-machines UI built on QEMU.
 
 ### Terminal experience
 - `install-modern-cli.sh` — bundle of modern CLI tools: ripgrep, fd, bat, eza, fzf, zoxide, git-delta, jq, yq, tree, htop, ncdu. Adds zoxide init and eza aliases (`ls`, `ll`, `la`, `lt`) to `~/.zshrc`.

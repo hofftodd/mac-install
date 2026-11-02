@@ -36,10 +36,11 @@ ITEMS=(
     "Editors / dev apps|./install-pi.sh"
     "Editors / dev apps|./install-oh-my-pi.sh"
 
-    "Containerization|./install-docker-desktop.sh"
-    "Containerization|./install-rancher-desktop.sh"
-    "Containerization|./install-orbstack.sh"
-    "Containerization|./install-lima.sh"
+    "VMs and virtualization|./install-docker-desktop.sh"
+    "VMs and virtualization|./install-rancher-desktop.sh"
+    "VMs and virtualization|./install-orbstack.sh"
+    "VMs and virtualization|./install-lima.sh"
+    "VMs and virtualization|./install-utm.sh"
 
     "Productivity|./install-obsidian.sh"
     "Productivity|./install-chrome.sh"
@@ -63,7 +64,6 @@ ITEMS=(
     "Sync / utilities|./install-unison.sh"
     "Sync / utilities|./install-vlc.sh"
     "Sync / utilities|./install-handbrake.sh"
-    "Sync / utilities|./install-utm.sh"
 
     "Terminal experience|./install-modern-cli.sh"
     "Terminal experience|./install-nerd-fonts.sh"

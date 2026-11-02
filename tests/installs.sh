@@ -34,6 +34,9 @@ SCRIPTS=(
     install-postgres.sh
     install-iterm2.sh
     install-chrome.sh
+    install-gmail.sh
+    install-google-calendar.sh
+    install-google-contacts.sh
     install-modern-cli.sh
     install-starship.sh
 )
@@ -88,6 +91,17 @@ zcheck "tab completion is on"   '(( $+functions[compdef] ))'
 zcheck "uv completion loaded"   '[[ -n "${_comps[uv]:-}" ]]'
 zcheck "PATH has no duplicates" '[[ ${#path} -eq $(print -l $path | sort -u | wc -l) ]]'
 zcheck "git pager is delta"     '[[ "$(git config --global core.pager)" == delta ]]'
+
+echo "== Chrome app launchers"
+for app in "Gmail" "Google Calendar" "Google Contacts"; do
+    bundle="$HOME/Applications/$app.app"
+    exe="$bundle/Contents/MacOS/$(printf '%s' "$app" | tr -d ' ')"
+    if plutil -lint "$bundle/Contents/Info.plist" >/dev/null && [ -x "$exe" ] && grep -q -- '--app=https://' "$exe"; then
+        pass "$app.app: valid Info.plist, executable launcher"
+    else
+        fail "$app.app is missing or broken"
+    fi
+done
 
 echo "== Repo left clean (update-versions must not edit tracked files)"
 if [ -z "$(git status --porcelain)" ]; then pass "no changes in the checkout"; else fail "checkout modified:"$'\n'"$(git status --porcelain)"; fi

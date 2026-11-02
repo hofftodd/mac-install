@@ -119,9 +119,9 @@ These categories match the menu layout in `install-master.sh`.
 - `install-obsidian.sh` — Obsidian.
 - `install-chrome.sh` — Google Chrome.
 - `install-1password.sh` — 1Password desktop client.
-- `install-gmail.sh` — Gmail web-app launcher (Chrome `--app=` mode wrapped in a `.app` bundle in `~/Applications`).
-- `install-google-calendar.sh` — Google Calendar web-app launcher (same wrapper as Gmail).
-- `install-google-contacts.sh` — Google Contacts web-app launcher (same wrapper as Gmail).
+- `install-gmail.sh` — Gmail web-app launcher (Chrome `--app=` mode wrapped in a `.app` bundle in `~/Applications`; shared helper in `lib/chrome-app.sh`, so adding another site is a two-line script).
+- `install-google-calendar.sh` — Google Calendar web-app launcher (same helper as Gmail).
+- `install-google-contacts.sh` — Google Contacts web-app launcher (same helper as Gmail).
 
 ### Comms
 - `install-slack.sh` — Slack desktop client.

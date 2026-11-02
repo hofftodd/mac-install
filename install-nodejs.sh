@@ -2,10 +2,11 @@
 set -euo pipefail
 
 source "$(dirname "${BASH_SOURCE[0]}")/lib/zshrc.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lib/versions.sh"
 
 # Install Node.js via nvm (Node Version Manager).
 # See https://github.com/nvm-sh/nvm
-NVM_VERSION="${NVM_VERSION:-v0.40.4}"
+NVM_VERSION="${NVM_VERSION:-v0.40.8}"   # latest is saved by update-versions.sh
 NODE_VERSION="${NODE_VERSION:---lts}"   # e.g. "22", "20.18.0", or "--lts"
 
 export PROFILE=/dev/null

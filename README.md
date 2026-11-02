@@ -10,7 +10,7 @@ This project was vibe coded with [Claude Code](https://claude.com/claude-code) �
 
 ### Bootstrap (fresh machine)
 
-On a brand-new Mac, you don't have this repo yet. Run the bootstrap one-liner — it installs the Xcode Command Line Tools and Homebrew, prompts for your git name and email, generates an SSH key, prints it for you to paste into GitHub, then clones this repo.
+On a brand-new Mac, you don't have this repo yet. Run the bootstrap one-liner — it installs the Xcode Command Line Tools and Homebrew (and adds Homebrew to your PATH in `~/.zprofile`), prompts for your git name and email, generates an SSH key, prints it for you to paste into GitHub, then clones this repo.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/hofftodd/mac-install/main/bootstrap.sh | bash
@@ -48,21 +48,22 @@ Or run the menu:
 
 `install-master.sh` is a pure-bash TUI with a collapsible category tree, arrow-key navigation, and checkboxes. It runs the selected scripts and **continues past failures**, capturing per-script logs in a temp directory and printing a punch list at the end. Press `r` inside the menu to view this README without leaving it.
 
-Every script starts ticked except Docker Desktop, Rancher Desktop and OrbStack: each ships its own `docker` CLI and they conflict, so tick the one you want (the list lives in `DEFAULT_OFF` at the top of `install-master.sh`).
+Every install script starts ticked except Docker Desktop, Rancher Desktop and OrbStack: each ships its own `docker` CLI and they conflict, so tick the one you want (the list lives in `DEFAULT_OFF` at the top of `install-master.sh`). The macOS settings also start unticked (see [macOS settings](#macos-settings)).
 
-Refresh the pinned version defaults (nvm, Nerd Fonts) from upstream before installing:
+Look up the latest versions of the few tools that are pinned (nvm and the PostgreSQL major version):
 
 ```bash
 ./update-versions.sh
 ```
 
-`install-master.sh` runs this automatically as its first step.
+It saves them to `~/.mac-install/versions.env`, which the install scripts read; the repo itself isn't modified. It's optional (scripts fall back to built-in defaults) and `install-master.sh` runs it first by default. Everything else installs the latest version anyway.
 
 Most scripts that pin a version expose an env var override, e.g.:
 
 ```bash
 PYTHON_VERSION=3.13         ./install-uv.sh
 NODE_VERSION=22             ./install-nodejs.sh
+NVM_VERSION=v0.40.8         ./install-nodejs.sh
 JAVA_VERSION=21.0.5-tem     ./install-sdkman.sh
 BACKEND=cpu                 ./install-llamacpp.sh   # default is metal
 PG_FORMULA=postgresql@17    ./install-postgres.sh
@@ -73,10 +74,10 @@ PG_FORMULA=postgresql@17    ./install-postgres.sh
 These categories match the menu layout in `install-master.sh`.
 
 ### Setup
-- `update-versions.sh` — refresh pinned tool versions (nvm, Nerd Fonts) from upstream APIs and rewrite the defaults in the relevant install scripts.
+- `update-versions.sh` — look up the latest nvm release and PostgreSQL major version and save them to `~/.mac-install/versions.env` for the install scripts (via `lib/versions.sh`). Never edits the repo.
 
 ### Git / GitHub
-- `install-git-config.sh` — global git config: `user.name`/`user.email` (prompts if not set), modern defaults, aliases. Auto-wires `git-delta` as the pager if installed.
+- `install-git-config.sh` — global git config: `user.name`/`user.email` (prompts if not set), modern defaults, aliases. Installs and sets up `micro` as the editor and `git-delta` as the pager.
 - `install-gh.sh` — GitHub CLI (`gh`).
 
 ### Languages
@@ -131,7 +132,7 @@ These categories match the menu layout in `install-master.sh`.
 - `install-freerdp.sh` — FreeRDP, open-source Remote Desktop Protocol client (plus XQuartz for display).
 
 ### Databases
-- `install-postgres.sh` — PostgreSQL (`postgresql@16` by default) plus `pgcli`. Starts as a brew service and creates a database matching your username.
+- `install-postgres.sh` — PostgreSQL plus `pgcli`, running as a brew service, with a database matching your username and `psql` & co. on PATH (`~/.zshrc.d/20-postgres.zsh`). Installs the newest major (`postgresql@18`, or what `update-versions.sh` found). If an older `postgresql@N` is already installed it keeps using that and prints the upgrade steps, since each major has its own data and they share port 5432. Force a version with `PG_FORMULA`.
 
 ### Sync / utilities
 - `install-syncthing.sh` — Syncthing (per-user `brew services` agent).
@@ -141,7 +142,7 @@ These categories match the menu layout in `install-master.sh`.
 ### Terminal experience
 - `install-modern-cli.sh` — bundle of modern CLI tools: ripgrep, fd, bat, eza, fzf, zoxide, git-delta, jq, yq, tree, htop, ncdu. Adds zoxide init and eza aliases (`ls`, `ll`, `la`, `lt`) in `~/.zshrc.d/80-modern-cli.zsh`.
 - `install-nerd-fonts.sh` — FiraCode, JetBrainsMono, Hack, Meslo, CaskaydiaCove (Nerd Fonts) via brew casks.
-- `install-starship.sh` — Starship prompt with the Gruvbox Rainbow preset.
+- `install-starship.sh` — Starship prompt. Applies the Gruvbox Rainbow preset only if you don't already have `~/.config/starship.toml`.
 - `install-btop.sh` — btop process/resource monitor.
 - `install-ghostty.sh` — Ghostty, fast GPU-accelerated native terminal emulator.
 - `install-iterm2.sh` — iTerm2, feature-rich terminal emulator for macOS.
@@ -166,7 +167,7 @@ Before a setting is changed for the first time, its original value is saved to `
 
 ## Notes
 
-- Scripts assume macOS with Homebrew already installed (run `bootstrap.sh` if not).
+- Scripts assume macOS with Homebrew already installed (run `bootstrap.sh` if not). `install-master.sh` puts Homebrew on PATH for the scripts it runs even if your current shell doesn't have it.
 - Scripts that need shell setup (nvm, Bun, uv, rustup, SDKMAN, Go, Starship, modern-cli, and the agents that install into `~/.local/bin`) each write their own file to `~/.zshrc.d/`, e.g. `~/.zshrc.d/20-nvm.zsh`. The first one adds a small loader to `~/.zshrc` that sources every `~/.zshrc.d/*.zsh` in name order, so the number prefix sets load order. Re-running a script overwrites its file; deleting the file removes that tool's shell setup. Open a new shell or `source ~/.zshrc` after running.
 - Older versions of these scripts appended directly to `~/.zshrc`. Re-running a script moves its old lines out (exact matches only), backing up the original to `~/.zshrc.mac-install.bak` first. The helper lives in `lib/zshrc.sh`.
-- `brew install` is a no-op when a formula is already installed, so re-running scripts is safe. Cask installs that detect an existing app in `/Applications` (LM Studio, Obsidian, UTM, Ghostty, iTerm2, Rancher Desktop, OrbStack) skip cleanly instead of failing.
+- `brew install` is a no-op when a formula is already installed, so re-running scripts is safe. Apps (casks) go through `cask_install` in `lib/brew.sh`: if the app is already in `/Applications` but wasn't installed by Homebrew (e.g. downloaded from the vendor), the script skips it instead of failing and prints how to hand it over to Homebrew (`brew install --cask --adopt <cask>`).

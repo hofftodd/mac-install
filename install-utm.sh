@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+source "$(dirname "${BASH_SOURCE[0]}")/lib/brew.sh"
+
 # UTM, virtual machines UI using QEMU. See https://mac.getutm.app/
-if [ -d "/Applications/UTM.app" ]; then
-    echo "UTM already present at /Applications/UTM.app — skipping cask install."
-else
-    brew install --cask utm
-fi
+cask_install utm "UTM.app"

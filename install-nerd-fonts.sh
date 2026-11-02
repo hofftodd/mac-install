@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+source "$(dirname "${BASH_SOURCE[0]}")/lib/brew.sh"
+
 # Install a selection of Nerd Fonts via Homebrew casks.
 # See https://www.nerdfonts.com/
-# VERSION is informational only — Homebrew tracks upstream automatically.
-VERSION="3.4.0"
 
 # Cask names: each is `font-<name>-nerd-font`.
 FONTS=(
@@ -16,7 +16,7 @@ FONTS=(
 )
 
 for font in "${FONTS[@]}"; do
-    brew install --cask "$font"
+    cask_install "$font"
 done
 
-echo "Nerd Fonts installed (target version $VERSION; brew may have a newer one)."
+echo "Nerd Fonts installed (brew upgrade keeps them current)."

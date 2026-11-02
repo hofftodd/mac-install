@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+source "$(dirname "${BASH_SOURCE[0]}")/lib/brew.sh"
+
 # Obsidian.
-if [ -d "/Applications/Obsidian.app" ]; then
-    echo "Obsidian already present at /Applications/Obsidian.app — skipping cask install."
-else
-    brew install --cask obsidian
-fi
+cask_install obsidian "Obsidian.app"

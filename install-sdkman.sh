@@ -1,8 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+source "$(dirname "${BASH_SOURCE[0]}")/lib/zshrc.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/lib/brew.sh"
+
 # Install SDKMAN! and use it to install OpenJDK, Groovy, and Gradle.
 # See https://sdkman.io/
+
+# SDKMAN (its installer and the `sdk` command) needs Bash 4+, but macOS only
+# ships Bash 3.2 as /bin/bash. Install Homebrew's bash and re-run this script
+# with it. (Your login shell stays zsh; SDKMAN supports zsh directly.)
+if [ "${BASH_VERSINFO[0]}" -lt 4 ]; then
+    ensure_brew_on_path
+    brew install bash
+    exec "$(brew --prefix)/bin/bash" "$0" "$@"
+fi
 
 # zip/unzip ship with macOS; curl too. Nothing extra to install.
 
@@ -11,17 +23,15 @@ if [ -d "$HOME/.sdkman" ]; then
     echo "SDKMAN! already installed at $HOME/.sdkman — skipping installer."
     SDKMAN_PREEXISTING=1
 else
-    curl -s "https://get.sdkman.io?rcupdate=false" | bash
+    # Feed the installer to this (4+) bash, not whatever `bash` is first on PATH.
+    curl -s "https://get.sdkman.io?rcupdate=false" | "$BASH"
 fi
 
-if ! grep -q 'sdkman-init.sh' "$HOME/.zshrc" 2>/dev/null; then
-    cat >> "$HOME/.zshrc" <<'EOF'
-
+install_zshrc_snippet 20-sdkman <<'EOF'
 # SDKMAN!
 export SDKMAN_DIR="$HOME/.sdkman"
 [[ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ]] && source "$SDKMAN_DIR/bin/sdkman-init.sh"
 EOF
-fi
 
 export SDKMAN_DIR="$HOME/.sdkman"
 # SDKMAN's shell function and its `sdk` subcommands aren't `set -u` safe;
@@ -48,15 +58,19 @@ if [ -z "${JAVA_VERSION:-}" ]; then
 fi
 : "${JAVA_VERSION:?Could not resolve a Temurin Java identifier from 'sdk list java'}"
 
-if sdk current java >/dev/null 2>&1; then
-    echo "java already installed: $(sdk current java)"
+# `sdk current <candidate>` exits 0 even when nothing is installed, so check
+# for the candidate's `current` link instead.
+sdk_has() { [ -e "$SDKMAN_DIR/candidates/$1/current" ]; }
+
+if sdk_has java; then
+    echo "java already installed: $(readlink "$SDKMAN_DIR/candidates/java/current" | xargs basename)"
 else
     sdk install java "$JAVA_VERSION"
 fi
 
 for candidate in groovy gradle; do
-    if sdk current "$candidate" >/dev/null 2>&1; then
-        echo "$candidate already installed: $(sdk current "$candidate")"
+    if sdk_has "$candidate"; then
+        echo "$candidate already installed: $(readlink "$SDKMAN_DIR/candidates/$candidate/current" | xargs basename)"
     else
         sdk install "$candidate"
     fi

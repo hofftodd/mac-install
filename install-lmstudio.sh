@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+source "$(dirname "${BASH_SOURCE[0]}")/lib/brew.sh"
+
 # LM Studio. See https://lmstudio.ai/
-if [ -d "/Applications/LM Studio.app" ]; then
-    echo "LM Studio already present at /Applications/LM Studio.app — skipping cask install."
-else
-    brew install --cask lm-studio
-fi
+cask_install lm-studio "LM Studio.app"
 
 echo "LM Studio installed. Launch from Applications."

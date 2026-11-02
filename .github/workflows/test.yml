@@ -1,0 +1,61 @@
+name: test
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  # Weekly, to catch upstream changes (renamed casks, installer changes)
+  # even when nothing in the repo changed.
+  schedule:
+    - cron: "23 7 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: shellcheck + consistency
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: shellcheck
+        run: |
+          shellcheck --version
+          shellcheck -x -S warning *.sh lib/*.sh tests/*.sh
+      - name: menu, scripts and README are consistent
+        run: tests/check-menu.sh
+
+  macos-settings:
+    name: macOS settings (applied for real, then restored)
+    runs-on: macos-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - name: menu items and --list on macOS
+        run: tests/check-menu.sh
+      - name: apply, re-run and restore settings
+        run: tests/macos-settings.sh
+
+  macos-installs:
+    name: macOS installs (real, run twice)
+    runs-on: macos-latest
+    timeout-minutes: 60
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      HOMEBREW_NO_INSTALL_CLEANUP: "1"
+      HOMEBREW_NO_ENV_HINTS: "1"
+    steps:
+      - uses: actions/checkout@v5
+      - name: what's preinstalled on this runner
+        run: |
+          sw_vers
+          /bin/bash --version | head -1
+          brew --version | head -1
+          brew list --formula | grep -E '^(postgresql|node|python|go|rust)' || true
+          ls /Applications
+      - name: install, re-run, and check the shell
+        run: tests/installs.sh

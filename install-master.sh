@@ -7,6 +7,15 @@
 # Each sub-script has its own `set -e`, so a failed script aborts itself
 # before causing harm — we record it and move on.
 
+# Items are relative paths (./install-*.sh), so always work from the repo
+# folder, wherever the menu is started from.
+cd "$(dirname "${BASH_SOURCE[0]}")" || exit 1
+
+source lib/brew.sh
+# Scripts inherit this, so they work even if this shell doesn't have
+# Homebrew on PATH yet (e.g. a new terminal before ~/.zprofile was set up).
+ensure_brew_on_path
+
 ITEMS=(
     "Setup|./update-versions.sh"
 
@@ -14,11 +23,11 @@ ITEMS=(
     "Git/GitHub|./install-gh.sh"
 
     "Languages|./install-sdkman.sh"
-    "Languages|./install-python.sh"
-    "Languages|./install-pyenv.sh"
     "Languages|./install-uv.sh"
     "Languages|./install-go.sh"
+    "Languages|./install-rust.sh"
     "Languages|./install-nodejs.sh"
+    "Languages|./install-bun.sh"
 
     "Local LLMs|./install-ollama.sh"
     "Local LLMs|./install-lmstudio.sh"
@@ -29,12 +38,18 @@ ITEMS=(
     "Editors / dev apps|./install-intellij.sh"
     "Editors / dev apps|./install-micro.sh"
     "Editors / dev apps|./install-fresh.sh"
+    "Editors / dev apps|./install-croft.sh"
     "Editors / dev apps|./install-claude-code.sh"
     "Editors / dev apps|./install-opencode.sh"
     "Editors / dev apps|./install-little-coder.sh"
     "Editors / dev apps|./install-pi.sh"
     "Editors / dev apps|./install-oh-my-pi.sh"
-    "Editors / dev apps|./install-docker-desktop.sh"
+
+    "VMs and virtualization|./install-docker-desktop.sh"
+    "VMs and virtualization|./install-rancher-desktop.sh"
+    "VMs and virtualization|./install-orbstack.sh"
+    "VMs and virtualization|./install-lima.sh"
+    "VMs and virtualization|./install-utm.sh"
 
     "Productivity|./install-obsidian.sh"
     "Productivity|./install-chrome.sh"
@@ -58,13 +73,34 @@ ITEMS=(
     "Sync / utilities|./install-unison.sh"
     "Sync / utilities|./install-vlc.sh"
     "Sync / utilities|./install-handbrake.sh"
-    "Sync / utilities|./install-utm.sh"
 
     "Terminal experience|./install-modern-cli.sh"
     "Terminal experience|./install-nerd-fonts.sh"
     "Terminal experience|./install-starship.sh"
     "Terminal experience|./install-btop.sh"
     "Terminal experience|./install-ghostty.sh"
+    "Terminal experience|./install-iterm2.sh"
+
+    # "settings:" entries expand into one checkbox per setting, read from the
+    # script's --list output. Ticked settings are passed to the script by id
+    # and applied without further prompts.
+    "macOS: keyboard|settings:./macos-keyboard.sh"
+    "macOS: Finder|settings:./macos-finder.sh"
+    "macOS: Dock|settings:./macos-dock.sh"
+    "macOS: screenshots|settings:./macos-screenshots.sh"
+    "macOS: trackpad|settings:./macos-trackpad.sh"
+    "macOS: security|settings:./macos-security.sh"
+    "macOS: dialogs & devices|settings:./macos-misc.sh"
+    "macOS: always-on server|settings:./macos-server.sh"
+)
+
+# Scripts that start unticked in the menu. Docker Desktop, Rancher Desktop and
+# OrbStack each ship their own `docker` CLI/socket and conflict if installed or
+# run together, so the user picks one explicitly.
+DEFAULT_OFF=(
+    "./install-docker-desktop.sh"
+    "./install-rancher-desktop.sh"
+    "./install-orbstack.sh"
 )
 
 # --- Build state (parallel arrays; bash 3.2 compatible) ---
@@ -78,36 +114,67 @@ ITEM_NAMES=()
 ITEM_CATS=()
 ITEM_SEL=()
 
-for entry in "${ITEMS[@]}"; do
-    cat="${entry%%|*}"
-    path="${entry#*|}"
-
-    cat_idx=-1
+# add_item <category> <command> <label> <selected 0|1> <expanded 0|1>
+# <command> is a script path, optionally followed by a setting id.
+add_item() {
+    local cat="$1" cmd="$2" label="$3" sel="$4" expanded="$5" cat_idx=-1 flat_idx i
     for ((i = 0; i < ${#CAT_NAMES[@]}; i++)); do
         if [ "${CAT_NAMES[$i]}" = "$cat" ]; then cat_idx=$i; break; fi
     done
     if [ $cat_idx -lt 0 ]; then
         cat_idx=${#CAT_NAMES[@]}
         CAT_NAMES+=("$cat")
-        CAT_EXPANDED+=(1)
+        CAT_EXPANDED+=("$expanded")
         CAT_ITEM_IDXS+=("")
     fi
 
     flat_idx=${#PATHS[@]}
-    PATHS+=("$path")
-    ITEM_NAMES+=("$(basename "$path")")
+    PATHS+=("$cmd")
+    ITEM_NAMES+=("$label")
     ITEM_CATS+=("$cat_idx")
-    ITEM_SEL+=(1)
+    ITEM_SEL+=("$sel")
 
     if [ -z "${CAT_ITEM_IDXS[$cat_idx]}" ]; then
         CAT_ITEM_IDXS[$cat_idx]="$flat_idx"
     else
         CAT_ITEM_IDXS[$cat_idx]="${CAT_ITEM_IDXS[$cat_idx]} $flat_idx"
     fi
+}
+
+for entry in "${ITEMS[@]}"; do
+    cat="${entry%%|*}"
+    path="${entry#*|}"
+
+    case "$path" in
+        settings:*)
+            # One checkbox per setting; unticked and collapsed by default, since
+            # these change macOS itself and are a matter of taste.
+            script="${path#settings:}"
+            while IFS='|' read -r id label; do
+                [ -n "$id" ] && add_item "$cat" "$script $id" "$label" 0 0
+            done < <("$script" --list 2>/dev/null)
+            ;;
+        *)
+            sel=1
+            for off in "${DEFAULT_OFF[@]}"; do
+                if [ "$off" = "$path" ]; then sel=0; break; fi
+            done
+            add_item "$cat" "$path" "$(basename "$path")" "$sel" 1
+            ;;
+    esac
 done
 
 NUM_ITEMS=${#PATHS[@]}
 NUM_CATS=${#CAT_NAMES[@]}
+
+# --list: print every menu item as "category|ticked (1/0)|command|label" and
+# exit without starting the menu. Used by the tests in tests/.
+if [ "${1:-}" = "--list" ]; then
+    for ((ix = 0; ix < NUM_ITEMS; ix++)); do
+        printf '%s|%s|%s|%s\n' "${CAT_NAMES[${ITEM_CATS[$ix]}]}" "${ITEM_SEL[$ix]}" "${PATHS[$ix]}" "${ITEM_NAMES[$ix]}"
+    done
+    exit 0
+fi
 
 VISIBLE_ROWS=()    # entries: "C:catidx" | "I:flatidx"
 CURSOR=0
@@ -115,12 +182,12 @@ WINDOW_TOP=0
 
 build_visible_rows() {
     VISIBLE_ROWS=()
-    local ci fi
+    local ci ix
     for ((ci = 0; ci < NUM_CATS; ci++)); do
         VISIBLE_ROWS+=("C:$ci")
         if [ "${CAT_EXPANDED[$ci]}" = "1" ]; then
-            for fi in ${CAT_ITEM_IDXS[$ci]}; do
-                VISIBLE_ROWS+=("I:$fi")
+            for ix in ${CAT_ITEM_IDXS[$ci]}; do
+                VISIBLE_ROWS+=("I:$ix")
             done
         fi
     done
@@ -131,15 +198,15 @@ build_visible_rows() {
 cleanup() { printf '\033[?25h\033[?7h'; stty "$STTY_SAVED" 2>/dev/null; }
 STTY_SAVED="$(stty -g 2>/dev/null || echo)"
 trap cleanup EXIT INT TERM
-printf '\033[?25l'   # hide cursor
+printf '\033[?25l\033[?7l'   # hide cursor; clip long lines instead of wrapping
 
 # --- Render ---
 
 cat_counts() {
-    local cat_idx="$1" cs=0 ct=0 fi
-    for fi in ${CAT_ITEM_IDXS[$cat_idx]}; do
+    local cat_idx="$1" cs=0 ct=0 ix
+    for ix in ${CAT_ITEM_IDXS[$cat_idx]}; do
         ct=$((ct + 1))
-        [ "${ITEM_SEL[$fi]}" = "1" ] && cs=$((cs + 1))
+        [ "${ITEM_SEL[$ix]}" = "1" ] && cs=$((cs + 1))
     done
     printf '%d %d' "$cs" "$ct"
 }
@@ -183,9 +250,9 @@ render() {
     printf '\033[0m\033[K\n'
 
     # Status.
-    local sel_total=0 fi
-    for ((fi = 0; fi < NUM_ITEMS; fi++)); do
-        [ "${ITEM_SEL[$fi]}" = "1" ] && sel_total=$((sel_total + 1))
+    local sel_total=0 ix
+    for ((ix = 0; ix < NUM_ITEMS; ix++)); do
+        [ "${ITEM_SEL[$ix]}" = "1" ] && sel_total=$((sel_total + 1))
     done
     printf '  \033[1mSelected: %d/%d\033[0m\033[K\n\033[K\n' "$sel_total" "$NUM_ITEMS"
 
@@ -266,7 +333,8 @@ read_key() {
 }
 
 view_readme() {
-    local readme_path="$(dirname "$0")/README.md"
+    local readme_path
+    readme_path="$(dirname "$0")/README.md"
     [ -f "$readme_path" ] || return
     printf '\033[?25h\033[2J\033[H'
     if command -v glow >/dev/null 2>&1; then
@@ -437,15 +505,15 @@ expand_right() {
 }
 
 set_all() {
-    local val=$1 fi
-    for ((fi = 0; fi < NUM_ITEMS; fi++)); do ITEM_SEL[$fi]=$val; done
+    local val=$1 ix
+    for ((ix = 0; ix < NUM_ITEMS; ix++)); do ITEM_SEL[$ix]=$val; done
 }
 
 set_current_category() {
-    local val=$1 cat_idx fi
+    local val=$1 cat_idx ix
     read kind idx <<< "$(cur_kind_idx)"
     if [ "$kind" = "C" ]; then cat_idx=$idx; else cat_idx="${ITEM_CATS[$idx]}"; fi
-    for fi in ${CAT_ITEM_IDXS[$cat_idx]}; do ITEM_SEL[$fi]=$val; done
+    for ix in ${CAT_ITEM_IDXS[$cat_idx]}; do ITEM_SEL[$ix]=$val; done
 }
 
 # --- Main loop ---
@@ -479,9 +547,20 @@ done
 cleanup
 printf '\033[2J\033[H'
 
+# Each entry is a command: a script path, optionally followed by setting ids.
+# Ticked settings from the same script are combined into one run, so the
+# script applies them together (and restarts Finder/Dock only once).
 SCRIPTS=()
-for ((fi = 0; fi < NUM_ITEMS; fi++)); do
-    [ "${ITEM_SEL[$fi]}" = "1" ] && SCRIPTS+=("${PATHS[$fi]}")
+for ((ix = 0; ix < NUM_ITEMS; ix++)); do
+    [ "${ITEM_SEL[$ix]}" = "1" ] || continue
+    cmd="${PATHS[$ix]}"
+    last=$((${#SCRIPTS[@]} - 1))
+    if [ "$cmd" != "${cmd%% *}" ] && [ "$last" -ge 0 ] \
+        && [ "${SCRIPTS[$last]%% *}" = "${cmd%% *}" ] && [ "${SCRIPTS[$last]}" != "${SCRIPTS[$last]%% *}" ]; then
+        SCRIPTS[$last]="${SCRIPTS[$last]} ${cmd#* }"
+    else
+        SCRIPTS+=("$cmd")
+    fi
 done
 
 if [ "${#SCRIPTS[@]}" -eq 0 ]; then
@@ -508,7 +587,10 @@ echo "${C_DIM}Logs: $LOG_DIR${C_RESET}"
 echo "Running ${#SCRIPTS[@]} scripts..."
 echo
 
-for script in "${SCRIPTS[@]}"; do
+for cmd in "${SCRIPTS[@]}"; do
+    script="${cmd%% *}"
+    args=()
+    [ "$cmd" != "$script" ] && read -r -a args <<< "${cmd#* }"
     name="$(basename "$script")"
     if [ ! -x "$script" ]; then
         printf '  ? %-32s (not executable, skipped)\n' "$name"
@@ -517,7 +599,7 @@ for script in "${SCRIPTS[@]}"; do
     fi
     printf '%s→ %s%s\n' "$C_BOLD" "$name" "$C_RESET"
     log_file="$LOG_DIR/${name}.log"
-    "$script" 2>&1 | tee "$log_file"
+    "$script" ${args[@]+"${args[@]}"} 2>&1 | tee "$log_file"
     rc=${PIPESTATUS[0]}
     if [ "$rc" -eq 0 ]; then
         SUCCEEDED+=("$script")

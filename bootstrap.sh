@@ -58,11 +58,27 @@ if ! command -v brew >/dev/null 2>&1; then
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
 
-# Put brew on PATH for this shell (Apple Silicon vs Intel).
+# Put brew on PATH for this shell (Apple Silicon vs Intel), and for every
+# new login shell via ~/.zprofile — the Homebrew installer only prints this
+# step, and without it /opt/homebrew/bin isn't on PATH in new terminals.
+BREW_BIN=""
 if [ -x /opt/homebrew/bin/brew ]; then
-    eval "$(/opt/homebrew/bin/brew shellenv)"
+    BREW_BIN=/opt/homebrew/bin/brew
 elif [ -x /usr/local/bin/brew ]; then
-    eval "$(/usr/local/bin/brew shellenv)"
+    BREW_BIN=/usr/local/bin/brew
+fi
+if [ -z "$BREW_BIN" ]; then
+    echo "Homebrew install didn't finish (no brew found). Re-run this script." >&2
+    exit 1
+fi
+eval "$("$BREW_BIN" shellenv)"
+if ! grep -qs 'brew shellenv' "$HOME/.zprofile"; then
+    {
+        echo
+        echo "# Homebrew (added by mac-install bootstrap.sh)"
+        echo "eval \"\$($BREW_BIN shellenv)\""
+    } >> "$HOME/.zprofile"
+    echo "  Added Homebrew to PATH in ~/.zprofile"
 fi
 
 # git ships with the CLT, but make sure we have a recent one. glow is used by
@@ -122,7 +138,7 @@ read -r -p "Press ENTER once you've added the key to GitHub..." < /dev/tty
 
 echo
 echo "[4/5] Verifying SSH access to GitHub..."
-ssh-keyscan -t ed25519 github.com 2>/dev/null >> "$HOME/.ssh/known_hosts" 2>/dev/null || true
+ssh-keyscan -t ed25519 github.com >> "$HOME/.ssh/known_hosts" 2>/dev/null || true
 sort -u "$HOME/.ssh/known_hosts" -o "$HOME/.ssh/known_hosts" 2>/dev/null || true
 
 if ssh -T -o BatchMode=yes -o StrictHostKeyChecking=accept-new git@github.com 2>&1 | grep -q "successfully authenticated"; then

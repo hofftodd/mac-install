@@ -14,8 +14,6 @@ ITEMS=(
     "Git/GitHub|./install-gh.sh"
 
     "Languages|./install-sdkman.sh"
-    "Languages|./install-python.sh"
-    "Languages|./install-pyenv.sh"
     "Languages|./install-uv.sh"
     "Languages|./install-go.sh"
     "Languages|./install-nodejs.sh"

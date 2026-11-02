@@ -8,7 +8,6 @@ set -euo pipefail
 #
 # Sources:
 #   nvm           — github.com/nvm-sh/nvm latest release
-#   Python        — endoflife.date API (latest of the most recent stable cycle)
 #   Nerd Fonts    — github.com/ryanoasis/nerd-fonts latest release
 #
 # Skipped (no reliable machine-readable source):
@@ -76,10 +75,6 @@ NVM_LATEST="$(curl -fsSL https://api.github.com/repos/nvm-sh/nvm/releases/latest
 echo "nvm:        ${NVM_LATEST}"
 update_default "${DIR}/install-nodejs.sh" "NVM_VERSION" "$NVM_LATEST"
 
-PY_LATEST="$(curl -fsSL https://endoflife.date/api/python.json | jq -r '[.[] | select(.eol > (now | strftime("%Y-%m-%d")))] | .[0].latest')"
-echo "Python:     ${PY_LATEST}"
-update_default "${DIR}/install-pyenv.sh" "PYTHON_VERSION" "$PY_LATEST"
-
 NF_LATEST="$(curl -fsSL https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest | jq -r .tag_name | sed 's/^v//')"
 echo "Nerd Fonts: ${NF_LATEST}"
 update_plain "${DIR}/install-nerd-fonts.sh" "VERSION" "$NF_LATEST"
@@ -87,5 +82,6 @@ update_plain "${DIR}/install-nerd-fonts.sh" "VERSION" "$NF_LATEST"
 echo
 echo "Skipped (manual check needed):"
 echo "  - install-lmstudio.sh    — LM Studio cask is auto-updated by brew"
+echo "  - install-uv.sh          — not pinned: uv installs the latest Python by default"
 echo
 echo "Done."

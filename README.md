@@ -50,7 +50,7 @@ Or run the menu:
 
 Every script starts ticked except Docker Desktop, Rancher Desktop and OrbStack: each ships its own `docker` CLI and they conflict, so tick the one you want (the list lives in `DEFAULT_OFF` at the top of `install-master.sh`).
 
-Refresh the pinned version defaults (nvm, Python, Nerd Fonts) from upstream before installing:
+Refresh the pinned version defaults (nvm, Nerd Fonts) from upstream before installing:
 
 ```bash
 ./update-versions.sh
@@ -61,7 +61,7 @@ Refresh the pinned version defaults (nvm, Python, Nerd Fonts) from upstream befo
 Most scripts that pin a version expose an env var override, e.g.:
 
 ```bash
-PYTHON_VERSION=3.13.0       ./install-pyenv.sh
+PYTHON_VERSION=3.13         ./install-uv.sh
 NODE_VERSION=22             ./install-nodejs.sh
 JAVA_VERSION=21.0.5-tem     ./install-sdkman.sh
 BACKEND=cpu                 ./install-llamacpp.sh   # default is metal
@@ -73,7 +73,7 @@ PG_FORMULA=postgresql@17    ./install-postgres.sh
 These categories match the menu layout in `install-master.sh`.
 
 ### Setup
-- `update-versions.sh` — refresh pinned tool versions (nvm, Python, Nerd Fonts) from upstream APIs and rewrite the defaults in the relevant install scripts.
+- `update-versions.sh` — refresh pinned tool versions (nvm, Nerd Fonts) from upstream APIs and rewrite the defaults in the relevant install scripts.
 
 ### Git / GitHub
 - `install-git-config.sh` — global git config: `user.name`/`user.email` (prompts if not set), modern defaults, aliases. Auto-wires `git-delta` as the pager if installed.
@@ -81,9 +81,7 @@ These categories match the menu layout in `install-master.sh`.
 
 ### Languages
 - `install-sdkman.sh` — SDKMAN! plus Java (latest Eclipse Temurin), Groovy, and Gradle. Self-updates SDKMAN when re-run.
-- `install-python.sh` — Python 3 from Homebrew.
-- `install-pyenv.sh` — pyenv plus a pinned Python build.
-- `install-uv.sh` — uv: fast Python package/project manager.
+- `install-uv.sh` — Python via [uv](https://docs.astral.sh/uv/), the only Python setup here: installs uv, the latest Python (or `PYTHON_VERSION`) as `python`/`python3` in `~/.local/bin`, and uv/uvx tab completion. Use `uv` for projects and virtualenvs, `uv tool install` for Python CLI tools, and `uv python install 3.x` for more versions. On machines set up with the old `install-pyenv.sh`, it turns off pyenv's shell hook and prints how to remove pyenv. Homebrew's own `python` may still be installed as a dependency of other formulae; that's fine, since `~/.local/bin` comes first on PATH.
 - `install-go.sh` — Go from Homebrew.
 - `install-nodejs.sh` — Node.js via nvm (default LTS).
 
@@ -167,6 +165,6 @@ Before a setting is changed for the first time, its original value is saved to `
 ## Notes
 
 - Scripts assume macOS with Homebrew already installed (run `bootstrap.sh` if not).
-- Scripts that need shell setup (nvm, pyenv, SDKMAN, Go, Starship, modern-cli, and the agents that install into `~/.local/bin`) each write their own file to `~/.zshrc.d/`, e.g. `~/.zshrc.d/20-nvm.zsh`. The first one adds a small loader to `~/.zshrc` that sources every `~/.zshrc.d/*.zsh` in name order, so the number prefix sets load order. Re-running a script overwrites its file; deleting the file removes that tool's shell setup. Open a new shell or `source ~/.zshrc` after running.
+- Scripts that need shell setup (nvm, uv, SDKMAN, Go, Starship, modern-cli, and the agents that install into `~/.local/bin`) each write their own file to `~/.zshrc.d/`, e.g. `~/.zshrc.d/20-nvm.zsh`. The first one adds a small loader to `~/.zshrc` that sources every `~/.zshrc.d/*.zsh` in name order, so the number prefix sets load order. Re-running a script overwrites its file; deleting the file removes that tool's shell setup. Open a new shell or `source ~/.zshrc` after running.
 - Older versions of these scripts appended directly to `~/.zshrc`. Re-running a script moves its old lines out (exact matches only), backing up the original to `~/.zshrc.mac-install.bak` first. The helper lives in `lib/zshrc.sh`.
 - `brew install` is a no-op when a formula is already installed, so re-running scripts is safe. Cask installs that detect an existing app in `/Applications` (LM Studio, Obsidian, UTM, Ghostty, iTerm2, Rancher Desktop, OrbStack) skip cleanly instead of failing.

@@ -67,6 +67,8 @@ NVM_VERSION=v0.40.8         ./install-nodejs.sh
 JAVA_VERSION=21.0.5-tem     ./install-sdkman.sh
 BACKEND=cpu                 ./install-llamacpp.sh   # default is metal
 PG_FORMULA=postgresql@17    ./install-postgres.sh
+LITTLE_CODER_VERSION=1.20.0 ./install-little-coder.sh
+OMP_VERSION=v18.16.0        ./install-oh-my-pi.sh
 ```
 
 ## What's included
@@ -74,7 +76,7 @@ PG_FORMULA=postgresql@17    ./install-postgres.sh
 These categories match the menu layout in `install-master.sh`.
 
 ### Setup
-- `update-versions.sh` — look up the latest nvm release and PostgreSQL major version and save them to `~/.mac-install/versions.env` for the install scripts (via `lib/versions.sh`). Never edits the repo.
+- `update-versions.sh` — look up the latest nvm release and PostgreSQL major version and save them to `~/.mac-install/versions.env` for the install scripts (via `lib/versions.sh`). Also reports when little-coder or Oh My Pi has a newer release than the one pinned in its script, without changing the pin. Never edits the repo.
 
 ### Git / GitHub
 - `install-git-config.sh` — global git config: `user.name`/`user.email` (prompts if not set), modern defaults, aliases. Installs and sets up `micro` as the editor and `git-delta` as the pager.
@@ -102,9 +104,9 @@ These categories match the menu layout in `install-master.sh`.
 - `install-croft.sh` — croft, VSCode-style terminal text editor (from the `vitali87/croft` Homebrew tap).
 - `install-claude-code.sh` — Claude Code CLI (Anthropic).
 - `install-opencode.sh` — opencode, open-source terminal coding agent.
-- `install-little-coder.sh` — little-coder, npm-based AI coding agent CLI.
+- `install-little-coder.sh` — little-coder, npm-based AI coding agent CLI (needs Node 22.19+). Pinned to a release (`LITTLE_CODER_VERSION`, installed with `npm install -g little-coder@<version>`) rather than piping the project's install script from its main branch.
 - `install-pi.sh` — pi (pi.dev), terminal coding agent (npm; depends on Node).
-- `install-oh-my-pi.sh` — Oh My Pi, AI coding agent for the terminal (hash-anchored edits, LSP, Python, browser, subagents); binary `omp` from [can1357/oh-my-pi](https://github.com/can1357/oh-my-pi).
+- `install-oh-my-pi.sh` — Oh My Pi, AI coding agent for the terminal (hash-anchored edits, LSP, Python, browser, subagents); binary `omp` from [can1357/oh-my-pi](https://github.com/can1357/oh-my-pi). Pinned to a release (`OMP_VERSION`): the installer is fetched from that release tag and installs its prebuilt binary after checking its sha256.
 
 ### VMs and virtualization
 - `install-docker-desktop.sh` — Docker Desktop.

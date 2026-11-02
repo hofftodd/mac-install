@@ -15,6 +15,9 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib/brew.sh"
 #   PG_LATEST_FORMULA     — newest PostgreSQL major that Homebrew has as
 #                           postgresql@N, per endoflife.date (install-postgres.sh)
 #
+# Reported but not saved (pinned in their scripts on purpose):
+#   little-coder, Oh My Pi — third-party installers; bump after reviewing.
+#
 # Not pinned (always latest anyway):
 #   Python (uv), Rust (rustup), Bun, Go and every other Homebrew package or
 #   cask — `brew upgrade` keeps those current.
@@ -93,3 +96,26 @@ mkdir -p "$(dirname "$VERSIONS_FILE")"
 
 echo
 echo "Saved to $VERSIONS_FILE"
+
+# Third-party installers are pinned in their scripts on purpose, so a new
+# upstream release doesn't run on your Mac before you've looked at it. Only
+# report newer releases here; bump the pin by hand.
+pinned_default() { sed -n "s/^$2=\"\\\${$2:-\(.*\)}\"\$/\1/p" "$(dirname "${BASH_SOURCE[0]}")/$1" | head -1; }
+report_pin() {
+    local label="$1" pinned="$2" latest="$3" script="$4"
+    if [ -z "$latest" ]; then
+        printf '  ! %-12s pinned %s (could not look up the latest release)\n' "$label" "$pinned"
+    elif [ "$latest" = "$pinned" ]; then
+        printf '  = %-12s pinned %s (latest)\n' "$label" "$pinned"
+    else
+        printf '  ↑ %-12s pinned %s, %s is available — review it, then update %s\n' "$label" "$pinned" "$latest" "$script"
+    fi
+}
+echo
+echo "Pinned in their scripts (not changed here):"
+LC_LATEST="$(curl -fsSL https://registry.npmjs.org/little-coder/latest 2>/dev/null | jq -r .version 2>/dev/null || true)"
+report_pin little-coder "$(pinned_default install-little-coder.sh LITTLE_CODER_VERSION)" "$LC_LATEST" install-little-coder.sh
+OMP_LATEST="$(git ls-remote --tags --refs https://github.com/can1357/oh-my-pi.git 2>/dev/null \
+    | sed -n 's|.*refs/tags/v\([0-9]*\.[0-9]*\.[0-9]*\)$|\1|p' \
+    | sort -t. -k1,1n -k2,2n -k3,3n | tail -1 || true)"
+report_pin "Oh My Pi" "$(pinned_default install-oh-my-pi.sh OMP_VERSION)" "${OMP_LATEST:+v$OMP_LATEST}" install-oh-my-pi.sh

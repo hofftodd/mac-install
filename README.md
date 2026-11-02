@@ -85,6 +85,7 @@ These categories match the menu layout in `install-master.sh`.
 - `install-go.sh` — Go from Homebrew.
 - `install-rust.sh` — Rust via [rustup](https://rustup.rs/): stable toolchain (or `RUST_TOOLCHAIN`) with cargo, rustfmt, clippy and rust-analyzer. rustup manages toolchains per project — a `rust-toolchain.toml` in a repo pins its version and rustup installs it on first use. Re-running updates all toolchains. Shell setup in `~/.zshrc.d/20-rust.zsh`.
 - `install-nodejs.sh` — Node.js via nvm (default LTS).
+- `install-bun.sh` — [Bun](https://bun.com/), fast JavaScript/TypeScript runtime, package manager, bundler and test runner (Homebrew; update with `brew upgrade bun`). Adds `~/.bun/bin` (global `bun add -g` commands) to PATH via `~/.zshrc.d/20-bun.zsh`. Independent of Node/nvm.
 
 ### Local LLMs
 - `install-ollama.sh` — Ollama (cask, includes background launchd agent).
@@ -166,6 +167,6 @@ Before a setting is changed for the first time, its original value is saved to `
 ## Notes
 
 - Scripts assume macOS with Homebrew already installed (run `bootstrap.sh` if not).
-- Scripts that need shell setup (nvm, uv, rustup, SDKMAN, Go, Starship, modern-cli, and the agents that install into `~/.local/bin`) each write their own file to `~/.zshrc.d/`, e.g. `~/.zshrc.d/20-nvm.zsh`. The first one adds a small loader to `~/.zshrc` that sources every `~/.zshrc.d/*.zsh` in name order, so the number prefix sets load order. Re-running a script overwrites its file; deleting the file removes that tool's shell setup. Open a new shell or `source ~/.zshrc` after running.
+- Scripts that need shell setup (nvm, Bun, uv, rustup, SDKMAN, Go, Starship, modern-cli, and the agents that install into `~/.local/bin`) each write their own file to `~/.zshrc.d/`, e.g. `~/.zshrc.d/20-nvm.zsh`. The first one adds a small loader to `~/.zshrc` that sources every `~/.zshrc.d/*.zsh` in name order, so the number prefix sets load order. Re-running a script overwrites its file; deleting the file removes that tool's shell setup. Open a new shell or `source ~/.zshrc` after running.
 - Older versions of these scripts appended directly to `~/.zshrc`. Re-running a script moves its old lines out (exact matches only), backing up the original to `~/.zshrc.mac-install.bak` first. The helper lives in `lib/zshrc.sh`.
 - `brew install` is a no-op when a formula is already installed, so re-running scripts is safe. Cask installs that detect an existing app in `/Applications` (LM Studio, Obsidian, UTM, Ghostty, iTerm2, Rancher Desktop, OrbStack) skip cleanly instead of failing.

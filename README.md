@@ -104,6 +104,8 @@ These categories match the menu layout in `install-master.sh`.
 - `install-oh-my-pi.sh` — Oh My Pi, AI coding agent for the terminal (hash-anchored edits, LSP, Python, browser, subagents); binary `omp` from [can1357/oh-my-pi](https://github.com/can1357/oh-my-pi).
 - `install-docker-desktop.sh` — Docker Desktop.
 - `install-lima.sh` — Lima, Linux VMs on macOS (containerd/nerdctl included). Doesn't create a VM; run `limactl start` afterward.
+- `install-rancher-desktop.sh` — Rancher Desktop, containers plus local Kubernetes (`rancher` cask).
+- `install-orbstack.sh` — OrbStack, lightweight Docker and Linux VMs for macOS.
 
 ### Productivity
 - `install-obsidian.sh` — Obsidian.
@@ -144,4 +146,4 @@ These categories match the menu layout in `install-master.sh`.
 
 - Scripts assume macOS with Homebrew already installed (run `bootstrap.sh` if not).
 - Most language scripts append shell-init blocks to `~/.zshrc` (pyenv, sdkman, nvm, go). Open a new shell or `source ~/.zshrc` after running.
-- `brew install` is a no-op when a formula is already installed, so re-running scripts is safe. Cask installs that detect an existing app in `/Applications` (LM Studio, Obsidian, UTM, Ghostty, iTerm2) skip cleanly instead of failing.
+- `brew install` is a no-op when a formula is already installed, so re-running scripts is safe. Cask installs that detect an existing app in `/Applications` (LM Studio, Obsidian, UTM, Ghostty, iTerm2, Rancher Desktop, OrbStack) skip cleanly instead of failing.

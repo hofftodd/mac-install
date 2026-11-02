@@ -48,6 +48,8 @@ Or run the menu:
 
 `install-master.sh` is a pure-bash TUI with a collapsible category tree, arrow-key navigation, and checkboxes. It runs the selected scripts and **continues past failures**, capturing per-script logs in a temp directory and printing a punch list at the end. Press `r` inside the menu to view this README without leaving it.
 
+Every script starts ticked except Docker Desktop, Rancher Desktop and OrbStack: each ships its own `docker` CLI and they conflict, so tick the one you want (the list lives in `DEFAULT_OFF` at the top of `install-master.sh`).
+
 Refresh the pinned version defaults (nvm, Python, Nerd Fonts) from upstream before installing:
 
 ```bash

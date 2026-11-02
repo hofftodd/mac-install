@@ -72,6 +72,15 @@ ITEMS=(
     "Terminal experience|./install-iterm2.sh"
 )
 
+# Scripts that start unticked in the menu. Docker Desktop, Rancher Desktop and
+# OrbStack each ship their own `docker` CLI/socket and conflict if installed or
+# run together, so the user picks one explicitly.
+DEFAULT_OFF=(
+    "./install-docker-desktop.sh"
+    "./install-rancher-desktop.sh"
+    "./install-orbstack.sh"
+)
+
 # --- Build state (parallel arrays; bash 3.2 compatible) ---
 
 CAT_NAMES=()        # [cat_idx] = "Category Name"
@@ -102,7 +111,11 @@ for entry in "${ITEMS[@]}"; do
     PATHS+=("$path")
     ITEM_NAMES+=("$(basename "$path")")
     ITEM_CATS+=("$cat_idx")
-    ITEM_SEL+=(1)
+    sel=1
+    for off in "${DEFAULT_OFF[@]}"; do
+        if [ "$off" = "$path" ]; then sel=0; break; fi
+    done
+    ITEM_SEL+=("$sel")
 
     if [ -z "${CAT_ITEM_IDXS[$cat_idx]}" ]; then
         CAT_ITEM_IDXS[$cat_idx]="$flat_idx"

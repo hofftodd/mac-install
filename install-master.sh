@@ -36,6 +36,7 @@ ITEMS=(
     "Editors / dev apps|./install-pi.sh"
     "Editors / dev apps|./install-oh-my-pi.sh"
     "Editors / dev apps|./install-docker-desktop.sh"
+    "Editors / dev apps|./install-lima.sh"
 
     "Productivity|./install-obsidian.sh"
     "Productivity|./install-chrome.sh"

@@ -130,12 +130,14 @@ These categories match the menu layout in `install-master.sh`.
 ### Networking
 - `install-tailscale.sh` — Tailscale menu-bar app.
 - `install-freerdp.sh` — FreeRDP, open-source Remote Desktop Protocol client (plus XQuartz for display).
+- `install-nas-tools.sh` — Samba's `smbclient` for listing and testing SMB shares. macOS already has SMB and NFS clients built in (`smbutil`, `mount_smbfs`, `showmount`, `mount_nfs`); the script prints the common commands.
 
 ### Databases
 - `install-postgres.sh` — PostgreSQL plus `pgcli`, running as a brew service, with a database matching your username and `psql` & co. on PATH (`~/.zshrc.d/20-postgres.zsh`). Installs the newest major (`postgresql@18`, or what `update-versions.sh` found). If an older `postgresql@N` is already installed it keeps using that and prints the upgrade steps, since each major has its own data and they share port 5432. Force a version with `PG_FORMULA`.
 
 ### Sync / utilities
-- `install-syncthing.sh` — Syncthing (per-user `brew services` agent).
+- `install-syncthing.sh` — Syncthing macOS app (start it from Applications; web UI at http://localhost:8384).
+- `install-unison.sh` — Unison, two-way file synchronizer (keeps two folders in sync across machines, e.g. over SSH).
 - `install-vlc.sh` — VLC media player.
 - `install-handbrake.sh` — HandBrake (GUI + CLI).
 
@@ -164,11 +166,11 @@ Before a setting is changed for the first time, its original value is saved to `
 - `macos-trackpad.sh` — tap to click; three-finger drag (moves the three-finger swipes to four fingers). Needs a logout.
 - `macos-security.sh` — Touch ID for `sudo` via `/etc/pam.d/sudo_local` (survives macOS updates), and require the password immediately after sleep or screen saver (via `sysadminctl`). Both ask for your password.
 - `macos-misc.sh` — expanded Save and Print dialogs; Time Machine stops offering new disks; Photos doesn't open when a phone or camera is connected.
-- `macos-server.sh` — run the Mac as an always-on server: never sleep and keep disks awake on power (laptops keep normal battery behaviour), restart automatically after a power failure or freeze, wake for network access, Remote Login (SSH), Screen Sharing (VNC), and don't auto-install macOS updates (which restart the machine; security responses still install). Needs your password. Tick the whole group with `A` in the menu. Also prints the manual steps that can't be scripted safely: automatic login (so apps like Ollama, Syncthing and Tailscale start after a reboot) and a stable local hostname.
+- `macos-server.sh` — run the Mac as an always-on server: never sleep and keep disks awake on power (on laptops only while plugged in; battery behaviour is unchanged), restart automatically after a power failure or freeze, wake for network access, Remote Login (SSH), Screen Sharing (VNC), and don't auto-install macOS updates (which restart the machine; security responses still install). Needs your password. Tick the whole group with `A` in the menu. Also prints the manual steps that can't be scripted safely: automatic login (so apps like Ollama, Syncthing and Tailscale start after a reboot) and a stable local hostname.
 
 ## Notes
 
-- Scripts assume macOS with Homebrew already installed (run `bootstrap.sh` if not). `install-master.sh` puts Homebrew on PATH for the scripts it runs even if your current shell doesn't have it.
-- Scripts that need shell setup (nvm, Bun, uv, rustup, SDKMAN, Go, Starship, modern-cli, and the agents that install into `~/.local/bin`) each write their own file to `~/.zshrc.d/`, e.g. `~/.zshrc.d/20-nvm.zsh`. The first one adds a small loader to `~/.zshrc` that sources every `~/.zshrc.d/*.zsh` in name order, so the number prefix sets load order. Re-running a script overwrites its file; deleting the file removes that tool's shell setup. Open a new shell or `source ~/.zshrc` after running.
+- Scripts assume macOS with Homebrew already installed (run `bootstrap.sh` if not). `install-master.sh` puts Homebrew on PATH for the scripts it runs even if your current shell doesn't have it, and works from any folder (e.g. `~/mac-install/install-master.sh`).
+- Scripts that need shell setup (nvm, Bun, uv, rustup, SDKMAN, Go, Starship, modern-cli, and the agents that install into `~/.local/bin`) each write their own file to `~/.zshrc.d/`, e.g. `~/.zshrc.d/20-nvm.zsh`. The first one adds a small loader to `~/.zshrc` that sources every `~/.zshrc.d/*.zsh` in name order, so the number prefix sets load order. Re-running a script overwrites its file; deleting the file removes that tool's shell setup. `~/.zshrc.d/00-base.zsh` loads first: it turns on zsh tab completion (including Homebrew's completions for `gh`, `bun`, `rustup`, …), which macOS's default zsh leaves off, and keeps PATH free of duplicates. Open a new shell or `source ~/.zshrc` after running.
 - Older versions of these scripts appended directly to `~/.zshrc`. Re-running a script moves its old lines out (exact matches only), backing up the original to `~/.zshrc.mac-install.bak` first. The helper lives in `lib/zshrc.sh`.
 - `brew install` is a no-op when a formula is already installed, so re-running scripts is safe. Apps (casks) go through `cask_install` in `lib/brew.sh`: if the app is already in `/Applications` but wasn't installed by Homebrew (e.g. downloaded from the vendor), the script skips it instead of failing and prints how to hand it over to Homebrew (`brew install --cask --adopt <cask>`).

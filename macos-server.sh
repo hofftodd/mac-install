@@ -7,9 +7,9 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib/macos-defaults.sh"
 # by itself after a power cut or freeze, and be reachable over the network.
 # Most of these need your password once (sudo).
 #
-# Power settings apply to the "AC Power" profile only (pmset -c): a desktop
-# Mac is always on AC, and a laptop keeps its normal battery behaviour, so it
-# only stays awake while plugged in.
+# Power settings apply to the "AC Power" profile only (pmset -c) where the Mac
+# has one, so a laptop keeps its normal battery behaviour and only stays awake
+# while plugged in. Desktops without separate profiles use pmset -a.
 #
 # Run with no arguments to be asked about each setting, with setting ids to
 # apply just those, or with --list to see the ids. install-master.sh shows each
@@ -17,13 +17,25 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib/macos-defaults.sh"
 
 # --- Power (pmset) -------------------------------------------------------------
 
-# pm_get <key> — the key's value in the AC Power profile (empty if this Mac
-# doesn't have that setting).
+# Laptops list settings per power source ("Battery Power:", "AC Power:"); use
+# the AC profile there (pmset -c). If there's no AC section (some desktop
+# Macs print a single list), read that list and change all sources (pmset -a).
+if pmset -g custom 2>/dev/null | grep -q '^AC Power'; then
+    PM_SCOPE=-c
+else
+    PM_SCOPE=-a
+fi
+
+# pm_get <key> — the key's current value (empty if this Mac doesn't have it).
 pm_get() {
     pmset -g custom 2>/dev/null | awk -v key="$1" '
-        /^AC Power/ { ac = 1; next }
-        /^[A-Za-z].*:[[:space:]]*$/ { ac = 0 }
-        ac && $1 == key { print $2; exit }'
+        /^AC Power/ { ac = 1; seen = 1; next }
+        /^[A-Za-z].*:[[:space:]]*$/ { ac = 0; next }
+        $1 == key {
+            if (ac) acv = $2
+            else if (!anyset) { anyv = $2; anyset = 1 }
+        }
+        END { if (seen) print acv; else print anyv }'
 }
 
 # pm_setting <key> <value> <is_set|describe|apply>
@@ -41,11 +53,11 @@ pm_setting() {
             [ "$cur" = "$want" ]
             ;;
         describe)
-            echo "    pmset (AC power) $key: ${cur:-not available} → $want"
+            echo "    pmset $PM_SCOPE $key: ${cur:-not available} → $want"
             ;;
         apply)
-            sudo pmset -c "$key" "$want" || return 1
-            restore_append "pmset $key" "sudo pmset -c $key $cur"
+            sudo pmset "$PM_SCOPE" "$key" "$want" || return 1
+            restore_append "pmset $key" "sudo pmset $PM_SCOPE $key $cur"
             ;;
     esac
 }

@@ -35,10 +35,11 @@ ITEMS=(
     "Editors / dev apps|./install-little-coder.sh"
     "Editors / dev apps|./install-pi.sh"
     "Editors / dev apps|./install-oh-my-pi.sh"
-    "Editors / dev apps|./install-docker-desktop.sh"
-    "Editors / dev apps|./install-lima.sh"
-    "Editors / dev apps|./install-rancher-desktop.sh"
-    "Editors / dev apps|./install-orbstack.sh"
+
+    "Containerization|./install-docker-desktop.sh"
+    "Containerization|./install-rancher-desktop.sh"
+    "Containerization|./install-orbstack.sh"
+    "Containerization|./install-lima.sh"
 
     "Productivity|./install-obsidian.sh"
     "Productivity|./install-chrome.sh"

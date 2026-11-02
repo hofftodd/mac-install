@@ -106,8 +106,14 @@ pm_value() {
 }
 echo "pmset -g custom on this runner:"
 pmset -g custom | sed 's/^/    /'
+# Runners usually ship with sleep/disksleep already 0, which would only test
+# the "already set" path. Start from 10 so the change and restore really run.
+PM_RUNNER_SLEEP="$(pm_value sleep)"
+PM_RUNNER_DISKSLEEP="$(pm_value disksleep)"
+sudo pmset -a sleep 10 disksleep 10
 PM_ORIG_SLEEP="$(pm_value sleep)"
 PM_ORIG_DISKSLEEP="$(pm_value disksleep)"
+[ "$PM_ORIG_SLEEP" = 10 ] || fail "couldn't set up the pmset test (sleep is $PM_ORIG_SLEEP)"
 $BASH32 ./macos-server.sh never-sleep disk-sleep
 if [ "$(pm_value sleep)" = 0 ]; then pass "sleep = 0"; else fail "sleep = $(pm_value sleep) (expected 0)"; fi
 if [ "$(pm_value disksleep)" = 0 ]; then pass "disksleep = 0"; else fail "disksleep = $(pm_value disksleep) (expected 0)"; fi
@@ -132,6 +138,7 @@ while IFS='|' read -r domain key orig; do
 done <<< "$ORIGINALS"
 [ "$(pm_value sleep)" = "$PM_ORIG_SLEEP" ] && pass "pmset sleep back to $PM_ORIG_SLEEP" || fail "pmset sleep = $(pm_value sleep) (expected $PM_ORIG_SLEEP)"
 [ "$(pm_value disksleep)" = "$PM_ORIG_DISKSLEEP" ] && pass "pmset disksleep back to $PM_ORIG_DISKSLEEP" || fail "pmset disksleep = $(pm_value disksleep) (expected $PM_ORIG_DISKSLEEP)"
+sudo pmset -a sleep "$PM_RUNNER_SLEEP" disksleep "$PM_RUNNER_DISKSLEEP"   # leave the runner as we found it
 PAM_AFTER="$(cat /etc/pam.d/sudo_local 2>/dev/null || echo '<missing>')"
 if ! grep -qE '^auth[[:space:]]+sufficient[[:space:]]+pam_tid\.so' <<< "$PAM_AFTER"; then pass "pam_tid removed again"; else fail "pam_tid still enabled after restore (was: $PAM_BEFORE)"; fi
 

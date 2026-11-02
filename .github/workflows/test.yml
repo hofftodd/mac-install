@@ -21,7 +21,7 @@ jobs:
     name: shellcheck + consistency
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: shellcheck
         run: |
           shellcheck --version
@@ -34,7 +34,7 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: menu items and --list on macOS
         run: tests/check-menu.sh
       - name: apply, re-run and restore settings
@@ -49,7 +49,7 @@ jobs:
       HOMEBREW_NO_INSTALL_CLEANUP: "1"
       HOMEBREW_NO_ENV_HINTS: "1"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: what's preinstalled on this runner
         run: |
           sw_vers

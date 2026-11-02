@@ -16,6 +16,7 @@ ITEMS=(
     "Languages|./install-sdkman.sh"
     "Languages|./install-uv.sh"
     "Languages|./install-go.sh"
+    "Languages|./install-rust.sh"
     "Languages|./install-nodejs.sh"
 
     "Local LLMs|./install-ollama.sh"

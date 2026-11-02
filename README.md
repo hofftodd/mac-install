@@ -146,6 +146,16 @@ These categories match the menu layout in `install-master.sh`.
 - `install-ghostty.sh` — Ghostty, fast GPU-accelerated native terminal emulator.
 - `install-iterm2.sh` — iTerm2, feature-rich terminal emulator for macOS.
 
+### macOS settings
+These change macOS settings rather than installing software. Each script proposes its settings **one at a time**, shows the current and proposed value, and only changes it if you answer `y` (the default is no). Settings that already match are skipped without asking. Before a setting is changed for the first time, its original value is saved to `~/.mac-install/restore-macos-defaults.sh`; run that to undo everything. The shared helper is `lib/macos-defaults.sh`.
+- `macos-keyboard.sh` — fast key repeat and short repeat delay, key repeat instead of the accent picker, and smart quotes, smart dashes, auto-capitalisation, auto-correct and double-space period turned off. Key repeat needs a logout.
+- `macos-finder.sh` — show file extensions, hidden files, path bar and status bar; list view; folders first; search the current folder; no extension-change warning; no `.DS_Store` files on network or USB drives. Restarts Finder.
+- `macos-dock.sh` — auto-hide with no delay, 48 px icons, no recent apps, Spaces in a fixed order. Restarts the Dock.
+- `macos-screenshots.sh` — save to `~/Screenshots` (override with `SCREENSHOT_DIR`), PNG, no window shadow.
+- `macos-trackpad.sh` — tap to click; three-finger drag (moves the three-finger swipes to four fingers). Needs a logout.
+- `macos-security.sh` — Touch ID for `sudo` via `/etc/pam.d/sudo_local` (survives macOS updates), and require the password immediately after sleep or screen saver (via `sysadminctl`). Both ask for your password.
+- `macos-misc.sh` — expanded Save and Print dialogs; Time Machine stops offering new disks; Photos doesn't open when a phone or camera is connected.
+
 ## Notes
 
 - Scripts assume macOS with Homebrew already installed (run `bootstrap.sh` if not).

@@ -71,6 +71,14 @@ ITEMS=(
     "Terminal experience|./install-btop.sh"
     "Terminal experience|./install-ghostty.sh"
     "Terminal experience|./install-iterm2.sh"
+
+    "macOS settings|./macos-keyboard.sh"
+    "macOS settings|./macos-finder.sh"
+    "macOS settings|./macos-dock.sh"
+    "macOS settings|./macos-screenshots.sh"
+    "macOS settings|./macos-trackpad.sh"
+    "macOS settings|./macos-security.sh"
+    "macOS settings|./macos-misc.sh"
 )
 
 # Scripts that start unticked in the menu. Docker Desktop, Rancher Desktop and

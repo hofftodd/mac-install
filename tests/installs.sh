@@ -96,10 +96,14 @@ echo "== Chrome app launchers"
 for app in "Gmail" "Google Calendar" "Google Contacts"; do
     bundle="$HOME/Applications/$app.app"
     exe="$bundle/Contents/MacOS/$(printf '%s' "$app" | tr -d ' ')"
-    if plutil -lint "$bundle/Contents/Info.plist" >/dev/null && [ -x "$exe" ] && grep -q -- '--app=https://' "$exe"; then
-        pass "$app.app: valid Info.plist, executable launcher"
+    if ! plutil -lint "$bundle/Contents/Info.plist" >/dev/null; then
+        fail "$app.app: Info.plist missing or invalid"
+    elif [ ! -x "$exe" ]; then
+        fail "$app.app: launcher $exe missing or not executable"
+    elif ! grep -qF -- '--app="https://' "$exe"; then
+        fail "$app.app: launcher doesn't open Chrome in app mode:"$'\n'"$(cat "$exe")"
     else
-        fail "$app.app is missing or broken"
+        pass "$app.app: valid Info.plist, launcher opens Chrome in app mode"
     fi
 done
 

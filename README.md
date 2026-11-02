@@ -136,9 +136,10 @@ These categories match the menu layout in `install-master.sh`.
 - `install-starship.sh` — Starship prompt with the Gruvbox Rainbow preset.
 - `install-btop.sh` — btop process/resource monitor.
 - `install-ghostty.sh` — Ghostty, fast GPU-accelerated native terminal emulator.
+- `install-iterm2.sh` — iTerm2, feature-rich terminal emulator for macOS.
 
 ## Notes
 
 - Scripts assume macOS with Homebrew already installed (run `bootstrap.sh` if not).
 - Most language scripts append shell-init blocks to `~/.zshrc` (pyenv, sdkman, nvm, go). Open a new shell or `source ~/.zshrc` after running.
-- `brew install` is a no-op when a formula is already installed, so re-running scripts is safe. Cask installs that detect an existing app in `/Applications` (LM Studio, Obsidian, UTM) skip cleanly instead of failing.
+- `brew install` is a no-op when a formula is already installed, so re-running scripts is safe. Cask installs that detect an existing app in `/Applications` (LM Studio, Obsidian, UTM, Ghostty, iTerm2) skip cleanly instead of failing.

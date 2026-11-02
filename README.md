@@ -164,6 +164,7 @@ Before a setting is changed for the first time, its original value is saved to `
 - `macos-trackpad.sh` — tap to click; three-finger drag (moves the three-finger swipes to four fingers). Needs a logout.
 - `macos-security.sh` — Touch ID for `sudo` via `/etc/pam.d/sudo_local` (survives macOS updates), and require the password immediately after sleep or screen saver (via `sysadminctl`). Both ask for your password.
 - `macos-misc.sh` — expanded Save and Print dialogs; Time Machine stops offering new disks; Photos doesn't open when a phone or camera is connected.
+- `macos-server.sh` — run the Mac as an always-on server: never sleep and keep disks awake on power (laptops keep normal battery behaviour), restart automatically after a power failure or freeze, wake for network access, Remote Login (SSH), Screen Sharing (VNC), and don't auto-install macOS updates (which restart the machine; security responses still install). Needs your password. Tick the whole group with `A` in the menu. Also prints the manual steps that can't be scripted safely: automatic login (so apps like Ollama, Syncthing and Tailscale start after a reboot) and a stable local hostname.
 
 ## Notes
 

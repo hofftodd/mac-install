@@ -26,9 +26,9 @@ touch_id_sudo() {
         apply)
             if [ -f "$SUDO_LOCAL" ] && grep -qE '^#[[:space:]]*auth[[:space:]]+sufficient[[:space:]]+pam_tid\.so' "$SUDO_LOCAL"; then
                 # Uncomment the line Apple's template ships with.
-                sudo sed -i '' -E 's/^#[[:space:]]*(auth[[:space:]]+sufficient[[:space:]]+pam_tid\.so)/\1/' "$SUDO_LOCAL"
+                sudo sed -i '' -E 's/^#[[:space:]]*(auth[[:space:]]+sufficient[[:space:]]+pam_tid\.so)/\1/' "$SUDO_LOCAL" || return 1
             else
-                echo "$TID_LINE" | sudo tee -a "$SUDO_LOCAL" >/dev/null
+                echo "$TID_LINE" | sudo tee -a "$SUDO_LOCAL" >/dev/null || return 1
             fi
             restore_append "touch-id-sudo" \
                 "sudo sed -i '' -E '/^[[:space:]]*auth[[:space:]]+sufficient[[:space:]]+pam_tid\\.so/d' $SUDO_LOCAL"
@@ -55,7 +55,7 @@ screen_lock() {
             local before
             before="$(screen_lock_status)"
             echo "  sysadminctl will ask for your login password."
-            sysadminctl -screenLock immediate -password -
+            sysadminctl -screenLock immediate -password - || return 1
             restore_append "screen-lock" \
                 "# Screen lock delay was: $before" \
                 "# Restore it in System Settings → Lock Screen, or: sysadminctl -screenLock <seconds|off> -password -"

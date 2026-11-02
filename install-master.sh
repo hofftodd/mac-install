@@ -87,6 +87,7 @@ ITEMS=(
     "macOS: trackpad|settings:./macos-trackpad.sh"
     "macOS: security|settings:./macos-security.sh"
     "macOS: dialogs & devices|settings:./macos-misc.sh"
+    "macOS: always-on server|settings:./macos-server.sh"
 )
 
 # Scripts that start unticked in the menu. Docker Desktop, Rancher Desktop and

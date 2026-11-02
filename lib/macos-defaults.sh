@@ -25,7 +25,8 @@
 # custom_setting <id> <label> <function>
 #   For changes that aren't `defaults` values. The function is called with
 #   "is_set" (return 0 if already done), "describe" (print what would change)
-#   or "apply".
+#   or "apply" (return non-zero if the change couldn't be made; record any
+#   restore line only after it succeeds).
 #
 # Before a `defaults` value is changed for the first time, its original value
 # is recorded in ~/.mac-install/restore-macos-defaults.sh, so running that
@@ -229,7 +230,10 @@ _handle() {
             "$fn" describe
             if ! ask "  Apply?"; then echo "  – skipped"; return 0; fi
         fi
-        "$fn" apply
+        if ! "$fn" apply; then
+            echo "✗ $label — not changed (see above)"
+            return 0
+        fi
     else
         _pending "$idx"
         if [ "${#_PENDING[@]}" -eq 0 ]; then

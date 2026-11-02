@@ -96,6 +96,7 @@ These categories match the menu layout in `install-master.sh`.
 - `install-intellij.sh` — JetBrains IntelliJ IDEA.
 - `install-micro.sh` — micro, modern terminal text editor.
 - `install-fresh.sh` — Fresh terminal text editor (`fresh-editor` formula).
+- `install-croft.sh` — croft, VSCode-style terminal text editor (from the `vitali87/croft` Homebrew tap).
 - `install-claude-code.sh` — Claude Code CLI (Anthropic).
 - `install-opencode.sh` — opencode, open-source terminal coding agent.
 - `install-little-coder.sh` — little-coder, npm-based AI coding agent CLI.

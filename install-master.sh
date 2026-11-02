@@ -167,18 +167,27 @@ done
 NUM_ITEMS=${#PATHS[@]}
 NUM_CATS=${#CAT_NAMES[@]}
 
+# --list: print every menu item as "category|ticked (1/0)|command|label" and
+# exit without starting the menu. Used by the tests in tests/.
+if [ "${1:-}" = "--list" ]; then
+    for ((ix = 0; ix < NUM_ITEMS; ix++)); do
+        printf '%s|%s|%s|%s\n' "${CAT_NAMES[${ITEM_CATS[$ix]}]}" "${ITEM_SEL[$ix]}" "${PATHS[$ix]}" "${ITEM_NAMES[$ix]}"
+    done
+    exit 0
+fi
+
 VISIBLE_ROWS=()    # entries: "C:catidx" | "I:flatidx"
 CURSOR=0
 WINDOW_TOP=0
 
 build_visible_rows() {
     VISIBLE_ROWS=()
-    local ci fi
+    local ci ix
     for ((ci = 0; ci < NUM_CATS; ci++)); do
         VISIBLE_ROWS+=("C:$ci")
         if [ "${CAT_EXPANDED[$ci]}" = "1" ]; then
-            for fi in ${CAT_ITEM_IDXS[$ci]}; do
-                VISIBLE_ROWS+=("I:$fi")
+            for ix in ${CAT_ITEM_IDXS[$ci]}; do
+                VISIBLE_ROWS+=("I:$ix")
             done
         fi
     done
@@ -194,10 +203,10 @@ printf '\033[?25l\033[?7l'   # hide cursor; clip long lines instead of wrapping
 # --- Render ---
 
 cat_counts() {
-    local cat_idx="$1" cs=0 ct=0 fi
-    for fi in ${CAT_ITEM_IDXS[$cat_idx]}; do
+    local cat_idx="$1" cs=0 ct=0 ix
+    for ix in ${CAT_ITEM_IDXS[$cat_idx]}; do
         ct=$((ct + 1))
-        [ "${ITEM_SEL[$fi]}" = "1" ] && cs=$((cs + 1))
+        [ "${ITEM_SEL[$ix]}" = "1" ] && cs=$((cs + 1))
     done
     printf '%d %d' "$cs" "$ct"
 }
@@ -241,9 +250,9 @@ render() {
     printf '\033[0m\033[K\n'
 
     # Status.
-    local sel_total=0 fi
-    for ((fi = 0; fi < NUM_ITEMS; fi++)); do
-        [ "${ITEM_SEL[$fi]}" = "1" ] && sel_total=$((sel_total + 1))
+    local sel_total=0 ix
+    for ((ix = 0; ix < NUM_ITEMS; ix++)); do
+        [ "${ITEM_SEL[$ix]}" = "1" ] && sel_total=$((sel_total + 1))
     done
     printf '  \033[1mSelected: %d/%d\033[0m\033[K\n\033[K\n' "$sel_total" "$NUM_ITEMS"
 
@@ -324,7 +333,8 @@ read_key() {
 }
 
 view_readme() {
-    local readme_path="$(dirname "$0")/README.md"
+    local readme_path
+    readme_path="$(dirname "$0")/README.md"
     [ -f "$readme_path" ] || return
     printf '\033[?25h\033[2J\033[H'
     if command -v glow >/dev/null 2>&1; then
@@ -495,15 +505,15 @@ expand_right() {
 }
 
 set_all() {
-    local val=$1 fi
-    for ((fi = 0; fi < NUM_ITEMS; fi++)); do ITEM_SEL[$fi]=$val; done
+    local val=$1 ix
+    for ((ix = 0; ix < NUM_ITEMS; ix++)); do ITEM_SEL[$ix]=$val; done
 }
 
 set_current_category() {
-    local val=$1 cat_idx fi
+    local val=$1 cat_idx ix
     read kind idx <<< "$(cur_kind_idx)"
     if [ "$kind" = "C" ]; then cat_idx=$idx; else cat_idx="${ITEM_CATS[$idx]}"; fi
-    for fi in ${CAT_ITEM_IDXS[$cat_idx]}; do ITEM_SEL[$fi]=$val; done
+    for ix in ${CAT_ITEM_IDXS[$cat_idx]}; do ITEM_SEL[$ix]=$val; done
 }
 
 # --- Main loop ---
@@ -541,9 +551,9 @@ printf '\033[2J\033[H'
 # Ticked settings from the same script are combined into one run, so the
 # script applies them together (and restarts Finder/Dock only once).
 SCRIPTS=()
-for ((fi = 0; fi < NUM_ITEMS; fi++)); do
-    [ "${ITEM_SEL[$fi]}" = "1" ] || continue
-    cmd="${PATHS[$fi]}"
+for ((ix = 0; ix < NUM_ITEMS; ix++)); do
+    [ "${ITEM_SEL[$ix]}" = "1" ] || continue
+    cmd="${PATHS[$ix]}"
     last=$((${#SCRIPTS[@]} - 1))
     if [ "$cmd" != "${cmd%% *}" ] && [ "$last" -ge 0 ] \
         && [ "${SCRIPTS[$last]%% *}" = "${cmd%% *}" ] && [ "${SCRIPTS[$last]}" != "${SCRIPTS[$last]%% *}" ]; then

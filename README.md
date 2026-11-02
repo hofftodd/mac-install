@@ -168,6 +168,16 @@ Before a setting is changed for the first time, its original value is saved to `
 - `macos-misc.sh` — expanded Save and Print dialogs; Time Machine stops offering new disks; Photos doesn't open when a phone or camera is connected.
 - `macos-server.sh` — run the Mac as an always-on server: never sleep and keep disks awake on power (on laptops only while plugged in; battery behaviour is unchanged), restart automatically after a power failure or freeze, wake for network access, Remote Login (SSH), Screen Sharing (VNC), and don't auto-install macOS updates (which restart the machine; security responses still install). Needs your password. Tick the whole group with `A` in the menu. Also prints the manual steps that can't be scripted safely: automatic login (so apps like Ollama, Syncthing and Tailscale start after a reboot) and a stable local hostname.
 
+## Testing
+
+GitHub Actions (`.github/workflows/test.yml`) runs on every push, on pull requests, and weekly (to catch upstream changes such as renamed casks):
+
+- **shellcheck + consistency** (Linux): shellcheck on every script, and `tests/check-menu.sh`, which checks that every menu item points at an executable script and every script is in the menu and this README.
+- **macOS settings** (real Mac runner): `tests/macos-settings.sh` applies a sample of settings from each group for real, checks them with `defaults`/`pmset`, re-runs them (must report "already set"), checks that asking with no terminal and unknown ids change nothing, then runs the generated restore script and checks every original value came back.
+- **macOS installs** (real Mac runner): `tests/installs.sh` runs a representative set of install scripts twice (the second run checks they're safe to re-run), then opens a zsh and checks the tools are on PATH, `python3` is uv's, `psql` connects, tab completion is on, PATH has no duplicates, and the checkout is still clean.
+
+The scripts run under `/bin/bash` 3.2, as on a new Mac. The two macOS tests change system settings and install software, so they refuse to run anywhere but a CI runner. `tests/check-menu.sh` is safe to run locally. `./install-master.sh --list` prints every menu item without opening the menu.
+
 ## Notes
 
 - Scripts assume macOS with Homebrew already installed (run `bootstrap.sh` if not). `install-master.sh` puts Homebrew on PATH for the scripts it runs even if your current shell doesn't have it, and works from any folder (e.g. `~/mac-install/install-master.sh`).

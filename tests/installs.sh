@@ -30,6 +30,8 @@ SCRIPTS=(
     install-little-coder.sh
     install-pi.sh
     install-oh-my-pi.sh
+    install-fresh.sh
+    install-language-servers.sh
     install-bun.sh
     install-sdkman.sh
     install-postgres.sh
@@ -88,6 +90,13 @@ zcheck "rustc runs"             'rustc --version'
 zcheck "omp is the pinned release" 'omp --version'
 zcheck "little-coder is the pinned release" 'npm ls -g --depth=0 little-coder | grep little-coder@'
 zcheck "pi is the pinned release" 'npm ls -g --depth=0 @earendil-works/pi-coding-agent | grep pi-coding-agent@'
+zcheck "fresh runs"             'fresh --version'
+for server in gopls pylsp typescript-language-server vscode-json-language-server bash-language-server yaml-language-server taplo marksman jdtls sqls clangd; do
+    zcheck "$server (language server) on PATH" "command -v $server"
+done
+zcheck "marksman runs"          'marksman --version'
+zcheck "pylsp runs"             'pylsp --version'
+zcheck "Fresh auto-starts installed servers" 'python3 -c "import json,os; l=json.load(open(os.path.expanduser(\"~/.config/fresh/config.json\")))[\"lsp\"]; assert all(l[k][\"auto_start\"] for k in (\"rust\",\"go\",\"python\",\"typescript\",\"markdown\",\"c\")); print(len(l), \"languages\")"'
 zcheck "psql connects"          'psql -d postgres -tAc "select 1"'
 zcheck "tab completion is on"   '(( $+functions[compdef] ))'
 zcheck "uv completion loaded"   '[[ -n "${_comps[uv]:-}" ]]'

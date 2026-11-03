@@ -40,7 +40,11 @@ set +u
 # shellcheck disable=SC1091
 source "$SDKMAN_DIR/bin/sdkman-init.sh"
 
-export SDKMAN_AUTO_ANSWER=true
+# Answer SDKMAN's prompts ("set as default?") automatically. SDKMAN reads the
+# lowercase sdkman_auto_answer, which its config sets to false while loading,
+# so it has to be set after sourcing sdkman-init.sh.
+# shellcheck disable=SC2034  # read by the sdk functions sourced above
+sdkman_auto_answer=true
 
 # If SDKMAN was already on disk, refresh it and its candidate metadata so we
 # don't pin Java/Groovy/Gradle to stale versions.

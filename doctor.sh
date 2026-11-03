@@ -155,7 +155,7 @@ check_versions_file() {
 
 # --- What each install script provides ----------------------------------------
 # script|check, where check is: app:<Name>.app, cmd:<command>[:<version args>],
-# brew:<formula>, or fn:<function>. tests/check-menu.sh makes sure every install script is here.
+# brew:<formula>, npm:<global package>, or fn:<function>. tests/check-menu.sh makes sure every install script is here.
 CHECKS='update-versions.sh|fn:check_versions_file
 install-git-config.sh|fn:check_git_config
 install-gh.sh|cmd:gh
@@ -177,8 +177,8 @@ install-croft.sh|cmd:croft
 install-language-servers.sh|fn:check_language_servers
 install-claude-code.sh|cmd:claude
 install-opencode.sh|cmd:opencode
-install-little-coder.sh|cmd:little-coder
-install-pi.sh|cmd:pi
+install-little-coder.sh|npm:little-coder
+install-pi.sh|npm:@earendil-works/pi-coding-agent
 install-oh-my-pi.sh|cmd:omp
 install-docker-desktop.sh|app:Docker.app
 install-rancher-desktop.sh|app:Rancher Desktop.app
@@ -232,6 +232,11 @@ check_script() {
         brew)
             if brew list --formula "$target" >/dev/null 2>&1; then ok "$script" "$(brew list --versions "$target")"; else missing "$script"; fi
             ;;
+        npm)
+            local v=""
+            command -v npm >/dev/null 2>&1 && v="$(npm ls -g --depth=0 "$target" 2>/dev/null | grep -o -- "$target@[^ ]*" | head -1 || true)"
+            if [ -n "$v" ]; then ok "$script" "$v"; else missing "$script"; fi
+            ;;
         fn) "$target" "$script" ;;
     esac
 }
@@ -282,7 +287,14 @@ if [ "$RUN_BREW_DOCTOR" = 1 ] && command -v brew >/dev/null 2>&1; then
     if out="$(brew doctor 2>&1)"; then
         ok "brew doctor" "no problems"
     else
-        warn "brew doctor" "$(printf '%s\n' "$out" | grep -c '^Warning:') warning(s) — run 'brew doctor' to see them"
+        n="$(printf '%s\n' "$out" | grep -cE '^(Warning|Error):' || true)"
+        if [ "$n" -gt 0 ]; then
+            first="$(printf '%s\n' "$out" | grep -m1 -E '^(Warning|Error):' | cut -c1-70)"
+            warn "brew doctor" "$n issue(s), first: $first — run 'brew doctor' for details"
+        else
+            first="$(printf '%s\n' "$out" | grep -m1 -v '^[[:space:]]*$' | cut -c1-70)"
+            warn "brew doctor" "\"$first\" — run 'brew doctor' for details"
+        fi
     fi
 fi
 

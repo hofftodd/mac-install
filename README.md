@@ -88,7 +88,7 @@ Lists every install script, grouped like the menu, with âœ“ and the version, `â€
 ./update.sh rust uv    # just some steps
 ```
 
-Updates Homebrew packages and apps (`brew`), Rust toolchains (`rust`), uv's Python and tools (`uv`), Node to the newest LTS with the pinned npm tools carried over (`node`), and SDKMAN with Java, Groovy and Gradle (`sdkman`). Then it reports newer releases of the pinned tools (`pins`): little-coder, pi and Oh My Pi, which you bump by hand. Steps for tools you haven't installed are skipped. A failed step doesn't stop the rest; the summary shows it, and the exit status is non-zero. macOS updates stay in System Settings.
+Updates Homebrew packages and apps (`brew`), Rust toolchains (`rust`), uv's Python and tools (`uv`), Node to the newest LTS with the pinned npm tools carried over (`node`), and SDKMAN with Groovy and Gradle (`sdkman`; your Java default is left alone, and it tells you when a newer Temurin is available). Then it reports newer releases of the pinned tools (`pins`): little-coder, pi and Oh My Pi, which you bump by hand. Steps for tools you haven't installed are skipped. A failed step doesn't stop the rest; the summary shows it, and the exit status is non-zero. macOS updates stay in System Settings.
 
 ## What's included
 

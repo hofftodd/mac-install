@@ -162,10 +162,31 @@ main() {
     sort -u "$HOME/.ssh/known_hosts" -o "$HOME/.ssh/known_hosts" 2>/dev/null || true
 
     # ssh reads its input, so give it none (see main() above).
-    until ssh -T -o BatchMode=yes -o StrictHostKeyChecking=accept-new git@github.com </dev/null 2>&1 | grep -q "successfully authenticated"; do
-        echo "  ✗ GitHub doesn't accept this key yet." >&2
-        echo "    Add the key shown above at https://github.com/settings/ssh/new" >&2
-        echo "    (it's on your clipboard; key type: Authentication Key)." >&2
+    local ssh_out
+    while :; do
+        # ssh -T exits 1 even on success (GitHub gives no shell), so go by its
+        # message. ConnectTimeout: a blocked port 22 fails fast, not after minutes.
+        ssh_out="$(ssh -T -o BatchMode=yes -o ConnectTimeout=15 -o StrictHostKeyChecking=accept-new \
+            git@github.com </dev/null 2>&1 || true)"
+        case "$ssh_out" in *"successfully authenticated"*) break ;; esac
+        echo "  ✗ GitHub doesn't accept this key yet. ssh said:" >&2
+        printf '%s\n' "$ssh_out" | sed 's/^/      /' >&2
+        case "$ssh_out" in
+            *"IDENTIFICATION HAS CHANGED"*)
+                echo "    → This Mac has an old saved host key for github.com. Remove it with:" >&2
+                echo "        ssh-keygen -R github.com" >&2 ;;
+            *"timed out"*|*"Connection refused"*|*"Could not resolve"*|*"Network is unreachable"*)
+                echo "    → Couldn't reach github.com on SSH's port 22. Check the internet connection;" >&2
+                echo "      some work and guest networks block port 22." >&2 ;;
+            *"Permission denied"*)
+                echo "    → GitHub doesn't have this key. Add it at https://github.com/settings/ssh/new" >&2
+                echo "      (it's on your clipboard; key type: Authentication Key). This Mac's key is:" >&2
+                echo "        $(ssh-keygen -lf "${SSH_KEY}.pub" 2>/dev/null)" >&2
+                echo "      and should match one listed at https://github.com/settings/keys" >&2 ;;
+            *)
+                echo "    → Add the key shown above at https://github.com/settings/ssh/new" >&2
+                echo "      (it's on your clipboard; key type: Authentication Key)." >&2 ;;
+        esac
         read -r -p "  Press ENTER to try again, or Ctrl-C to stop..." < /dev/tty
     done
     echo "  ✓ GitHub SSH auth working."

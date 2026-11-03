@@ -184,7 +184,7 @@ Before a setting is changed for the first time, its original value is saved to `
 
 ## Testing
 
-GitHub Actions (`.github/workflows/test.yml`) runs on every push, on pull requests, and weekly (to catch upstream changes such as renamed casks):
+GitHub Actions (`.github/workflows/test.yml`) runs once per change: on pull requests, on pushes to `main`, and weekly (to catch upstream changes such as renamed casks). A branch without a PR can be tested from the Actions tab ("Run workflow").
 
 - **shellcheck + consistency** (Linux): shellcheck on every script, and `tests/check-menu.sh`, which checks that every menu item points at an executable script and every script is in the menu and this README.
 - **Package check** (Linux): `tests/check-packages.py` reads the scripts and checks every Homebrew formula and cask, the croft tap formula, and each pinned npm package and version against its registry. It fails if anything is missing, deprecated or disabled. Most install scripts are too slow to run in CI, so this is what catches upstream renames, such as pi's npm package moving, within a week, via the weekly run.

@@ -48,7 +48,7 @@ Or run the menu:
 
 `install-master.sh` is a pure-bash TUI with a collapsible category tree, arrow-key navigation, and checkboxes. It runs the selected scripts and **continues past failures**, capturing per-script logs in a temp directory and printing a punch list at the end. Press `r` inside the menu to view this README without leaving it.
 
-Every install script starts ticked except Docker Desktop, Rancher Desktop and OrbStack: each ships its own `docker` CLI and they conflict, so tick the one you want (the list lives in `DEFAULT_OFF` at the top of `install-master.sh`). The macOS settings also start unticked (see [macOS settings](#macos-settings)).
+Every install script starts ticked except Docker Desktop and Rancher Desktop. They, and OrbStack, each ship their own `docker` CLI and conflict, so only **OrbStack**, the default for containers, starts ticked. To use another, untick OrbStack and tick the one you want (the list lives in `DEFAULT_OFF` at the top of `install-master.sh`). The macOS settings also start unticked (see [macOS settings](#macos-settings)).
 
 Look up the latest versions of the few tools that are pinned (nvm and the PostgreSQL major version):
 
@@ -131,7 +131,7 @@ These categories match the menu layout in `install-master.sh`.
 ### VMs and virtualization
 - `install-docker-desktop.sh` — Docker Desktop.
 - `install-rancher-desktop.sh` — Rancher Desktop, containers plus local Kubernetes (`rancher` cask).
-- `install-orbstack.sh` — OrbStack, lightweight Docker and Linux VMs for macOS.
+- `install-orbstack.sh` — OrbStack, lightweight Docker and Linux VMs for macOS. **The default** for containers: the only one of the three Docker providers that starts ticked.
 - `install-lima.sh` — Lima, Linux VMs on macOS (containerd/nerdctl included). Doesn't create a VM; run `limactl start` afterward.
 - `install-utm.sh` — UTM, virtual-machines UI built on QEMU.
 

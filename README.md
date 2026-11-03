@@ -115,6 +115,8 @@ These categories match the menu layout in `install-master.sh`.
 - `install-ollama.sh` — Ollama (cask, includes background launchd agent).
 - `install-lmstudio.sh` — LM Studio.
 - `install-llamacpp.sh` — llama.cpp built from source. Default backend is **Metal** on Apple Silicon; override with `BACKEND=cpu`. Symlinks binaries into `~/.local/bin`.
+- `install-sushi.sh` — [Sushi](https://github.com/beamivalice/sushi), a local AI server for very low-bit, high-quality quantized models (Qwen3.8 Flash Next, GLM 5.3 Flash, MiMo, DeepSeek V4.1 Flash) with OpenAI- and Anthropic-compatible APIs on `127.0.0.1:12345`, plus the `sushibar` menu bar app. Installed from the project's Homebrew tap. Needs Apple Silicon and **macOS 26.2 or later**; it stops with a clear message otherwise. Suggests a model for this Mac's memory (`sushi pull <model>`; `sushi list` shows which fit) but doesn't download one.
+- `install-dwarfstar.sh` — [DwarfStar (ds4)](https://github.com/antirez/ds4), antirez's Metal inference engine for DeepSeek V4 Flash, GLM 5.3 Flash and Qwen3.8 Flash Next. Built from source in `~/src/ds4` (override with `DS4_DIR`; re-run to update). `~/.local/bin` gets wrappers that run the tools from the source folder, where they find their shaders and default model: `ds4`, `ds4-server` (`127.0.0.1:8000`), `ds4-bench`, `ds4-eval`, `ds4-agent` (works in the folder you start it in), and `ds4-download`. Suggests a model for this Mac's memory (for example `ds4-download ds4f-q2` at 96 GB or more) but doesn't download one; the models are 40 GB and up.
 
 ### Editors / dev apps
 - `install-vscode.sh` — Visual Studio Code.

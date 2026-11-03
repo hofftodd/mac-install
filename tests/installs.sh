@@ -30,6 +30,8 @@ SCRIPTS=(
     install-little-coder.sh
     install-pi.sh
     install-oh-my-pi.sh
+    install-sushi.sh
+    install-dwarfstar.sh
     install-fresh.sh
     install-language-servers.sh
     install-bun.sh
@@ -100,6 +102,11 @@ zcheck "rustc runs"             'rustc --version'
 zcheck "omp is the pinned release" 'omp --version'
 zcheck "little-coder is the pinned release" 'npm ls -g --depth=0 little-coder | grep little-coder@'
 zcheck "pi is the pinned release" 'npm ls -g --depth=0 @earendil-works/pi-coding-agent | grep pi-coding-agent@'
+zcheck "sushi runs"             'sushi --version'
+for tool in ds4 ds4-agent ds4-server ds4-download; do
+    zcheck "$tool (DwarfStar) on PATH" "command -v $tool"
+done
+zcheck "DwarfStar is built"     '[[ -x "$HOME/src/ds4/ds4" && -x "$HOME/src/ds4/ds4-server" && -x "$HOME/src/ds4/ds4-agent" ]] && echo built'
 zcheck "fresh runs"             'fresh --version'
 for server in gopls pylsp typescript-language-server vscode-json-language-server bash-language-server yaml-language-server taplo marksman jdtls sqls clangd; do
     zcheck "$server (language server) on PATH" "command -v $server"

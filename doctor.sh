@@ -118,6 +118,19 @@ check_language_servers() {
     fi
 }
 
+check_dwarfstar() {
+    local dir="${DS4_DIR:-$HOME/src/ds4}"
+    if [ ! -d "$dir/.git" ]; then missing "$1"
+    elif [ ! -x "$dir/ds4" ]; then broken "$1" "$dir exists but isn't built (re-run install-dwarfstar.sh)"
+    elif ! command -v ds4 >/dev/null 2>&1; then broken "$1" "built, but the ds4 wrapper isn't on PATH (re-run install-dwarfstar.sh)"
+    else
+        local models
+        # gguf/ only exists once a model has been downloaded.
+        models="$(find "$dir/gguf" -name '*.gguf' 2>/dev/null | wc -l | tr -d ' ' || true)"
+        ok "$1" "built $(git -C "$dir" log -1 --format='%h, %cs'); $models model file(s) in gguf/"
+    fi
+}
+
 check_modern_cli() {
     local c found=0 total=0 absent=""
     for c in rg fd bat eza fzf zoxide delta jq yq tree htop ncdu; do
@@ -168,6 +181,8 @@ install-bun.sh|cmd:bun
 install-ollama.sh|app:Ollama.app
 install-lmstudio.sh|app:LM Studio.app
 install-llamacpp.sh|cmd:llama-cli
+install-sushi.sh|cmd:sushi
+install-dwarfstar.sh|fn:check_dwarfstar
 install-vscode.sh|app:Visual Studio Code.app
 install-cursor.sh|app:Cursor.app
 install-intellij.sh|app:IntelliJ IDEA.app

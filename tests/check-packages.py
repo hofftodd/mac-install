@@ -82,7 +82,7 @@ for path, text in scripts():
     values = defaults(text)
     # Only real commands at the start of a line, not mentions in comments or
     # echo'd tips.
-    for m in re.finditer(r"^[ \t]*brew install ([^\n;&|]*)", text, re.M):
+    for m in re.finditer(r"^[ \t]*brew install ([^\n;&|<>#]*)", text, re.M):
         args = m.group(1).split()
         if "--cask" in args:
             continue  # casks go through cask_install

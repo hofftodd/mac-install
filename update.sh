@@ -62,13 +62,22 @@ step_node() {
     set +u
     # shellcheck disable=SC1091
     . "$NVM_DIR/nvm.sh"
-    local before
-    before="$(nvm version default)"
-    # Installs the newest LTS if it isn't already, re-installing the global
-    # packages from the current default (keeps the pinned npm tools).
-    nvm install 'lts/*' --reinstall-packages-from=default --latest-npm
-    nvm alias default 'lts/*'
-    echo "Node default: $before → $(nvm version default)"
+    local current latest
+    current="$(nvm version default)"
+    latest="$(nvm version-remote 'lts/*')"
+    if [ "$latest" = "$current" ]; then
+        # (nvm refuses --reinstall-packages-from the version it's installing.)
+        echo "Node $current is already the newest LTS."
+    elif [ "$current" = "N/A" ]; then
+        nvm install "$latest" --latest-npm
+        nvm alias default "$latest"
+    else
+        # Re-install the global packages from the old default, which keeps
+        # the pinned npm tools (pi, little-coder) at their versions.
+        nvm install "$latest" --reinstall-packages-from="$current" --latest-npm
+        nvm alias default "$latest"
+        echo "Node default: $current → $latest"
+    fi
     set -u
 }
 
@@ -84,7 +93,13 @@ step_sdkman() {
         source "$SDKMAN_DIR/bin/sdkman-init.sh"
         sdk selfupdate || true
         sdk update
-        sdk upgrade
+        # `sdk upgrade` exits 1 when there is nothing to upgrade.
+        if ! out="$(sdk upgrade 2>&1)"; then
+            printf "%s\n" "$out"
+            case "$out" in *"No new candidates found"*) ;; *) exit 1 ;; esac
+        else
+            printf "%s\n" "$out"
+        fi
         sdk current'
 }
 

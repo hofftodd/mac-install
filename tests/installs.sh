@@ -78,12 +78,17 @@ echo "== Shell setup in a new zsh"
 ls -la "$HOME/.zshrc.d"
 # Run each check in an interactive zsh, as a new terminal would.
 zcheck() {
-    local label="$1" cmd="$2" out
-    if out="$(zsh -i -c "$cmd" 2>&1)"; then
+    local label="$1" cmd="$2" out err errfile
+    errfile="$(mktemp)"
+    # Show the check's own output; the shell's stderr (e.g. zle notices when
+    # there's no terminal) only matters if the check fails.
+    if out="$(zsh -i -c "$cmd" 2>"$errfile")"; then
         pass "$label${out:+: $(printf '%s' "$out" | tail -1)}"
     else
-        fail "$label failed:"$'\n'"$out"
+        err="$(cat "$errfile")"
+        fail "$label failed:"$'\n'"$out"$'\n'"$err"
     fi
+    rm -f "$errfile"
 }
 for tool in uv python3 cargo rustc rust-analyzer go node little-coder pi omp bun java gradle psql starship rg eza delta micro; do
     zcheck "$tool on PATH" "command -v $tool"

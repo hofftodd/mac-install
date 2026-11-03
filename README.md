@@ -48,7 +48,7 @@ Or run the menu:
 
 `install-master.sh` is a pure-bash TUI with a collapsible category tree, arrow-key navigation, and checkboxes. It runs the selected scripts and **continues past failures**, capturing per-script logs in a temp directory and printing a punch list at the end. Press `r` inside the menu to view this README without leaving it.
 
-Every install script starts ticked except Docker Desktop, Rancher Desktop and OrbStack: each ships its own `docker` CLI and they conflict, so tick the one you want (the list lives in `DEFAULT_OFF` at the top of `install-master.sh`). The macOS settings also start unticked (see [macOS settings](#macos-settings)).
+Every install script starts ticked except Docker Desktop and Rancher Desktop. They, and OrbStack, each ship their own `docker` CLI and conflict, so only **OrbStack**, the default for containers, starts ticked. To use another, untick OrbStack and tick the one you want (the list lives in `DEFAULT_OFF` at the top of `install-master.sh`). The macOS settings also start unticked (see [macOS settings](#macos-settings)).
 
 Look up the latest versions of the few tools that are pinned (nvm and the PostgreSQL major version):
 
@@ -71,6 +71,24 @@ LITTLE_CODER_VERSION=1.20.0 ./install-little-coder.sh
 PI_VERSION=1.5.0            ./install-pi.sh
 OMP_VERSION=v18.16.0        ./install-oh-my-pi.sh
 ```
+
+### Checking what's installed
+
+```bash
+./doctor.sh            # full report
+./doctor.sh --no-brew  # skip `brew doctor` (a few seconds)
+```
+
+Lists every install script, grouped like the menu, with ✓ and the version, `–` if not installed, `!` if worth a look, or ✗ if it's installed but broken (for example `java` resolving to Apple's placeholder, or another `python3` ahead of uv's). Then it runs health checks: Homebrew set up in `~/.zprofile`, the `~/.zshrc.d` loader, no duplicate PATH entries, Fresh's language-server auto-start, any macOS settings changed, and `brew doctor`. Tools are looked up on the PATH a new terminal gets. Exits 1 if anything is broken.
+
+### Keeping everything up to date
+
+```bash
+./update.sh            # everything
+./update.sh rust uv    # just some steps
+```
+
+Updates Homebrew packages and apps (`brew`), Rust toolchains (`rust`), uv's Python and tools (`uv`), Node to the newest LTS with the pinned npm tools carried over (`node`), and SDKMAN with Java, Groovy and Gradle (`sdkman`). Then it reports newer releases of the pinned tools (`pins`): little-coder, pi and Oh My Pi, which you bump by hand. Steps for tools you haven't installed are skipped. A failed step doesn't stop the rest; the summary shows it, and the exit status is non-zero. macOS updates stay in System Settings.
 
 ## What's included
 
@@ -113,7 +131,7 @@ These categories match the menu layout in `install-master.sh`.
 ### VMs and virtualization
 - `install-docker-desktop.sh` — Docker Desktop.
 - `install-rancher-desktop.sh` — Rancher Desktop, containers plus local Kubernetes (`rancher` cask).
-- `install-orbstack.sh` — OrbStack, lightweight Docker and Linux VMs for macOS.
+- `install-orbstack.sh` — OrbStack, lightweight Docker and Linux VMs for macOS. **The default** for containers: the only one of the three Docker providers that starts ticked.
 - `install-lima.sh` — Lima, Linux VMs on macOS (containerd/nerdctl included). Doesn't create a VM; run `limactl start` afterward.
 - `install-utm.sh` — UTM, virtual-machines UI built on QEMU.
 
@@ -146,9 +164,10 @@ These categories match the menu layout in `install-master.sh`.
 - `install-handbrake.sh` — HandBrake (GUI + CLI).
 
 ### Terminal experience
-- `install-modern-cli.sh` — bundle of modern CLI tools: ripgrep, fd, bat, eza, fzf, zoxide, git-delta, jq, yq, tree, htop, ncdu. Adds zoxide init and eza aliases (`ls`, `ll`, `la`, `lt`) in `~/.zshrc.d/80-modern-cli.zsh`.
+- `install-modern-cli.sh` — bundle of modern CLI tools: ripgrep, fd, bat, eza, fzf, zoxide, git-delta, jq, yq, tree, htop, ncdu. Sets up fzf's key bindings (Ctrl-R fuzzy history search, Ctrl-T insert a file path, Alt-C cd into a folder), zoxide, and eza aliases (`ls`, `ll`, `la`, `lt`) in `~/.zshrc.d/80-modern-cli.zsh`.
 - `install-nerd-fonts.sh` — FiraCode, JetBrainsMono, Hack, Meslo, CaskaydiaCove (Nerd Fonts) via brew casks.
 - `install-starship.sh` — Starship prompt. Applies the Gruvbox Rainbow preset only if you don't already have `~/.config/starship.toml`.
+- `install-zsh-plugins.sh` — zsh-autosuggestions (grey suggestions from history as you type; → accepts), zsh-syntax-highlighting (mistyped commands turn red), and direnv (loads a project's `.envrc` when you `cd` in, unloads it when you leave; approve each one with `direnv allow`). Loaded from `~/.zshrc.d/99-zsh-plugins.zsh`, last, as syntax highlighting requires.
 - `install-btop.sh` — btop process/resource monitor.
 - `install-ghostty.sh` — Ghostty, fast GPU-accelerated native terminal emulator.
 - `install-iterm2.sh` — iTerm2, feature-rich terminal emulator for macOS.
@@ -174,7 +193,7 @@ Before a setting is changed for the first time, its original value is saved to `
 
 ## Testing
 
-GitHub Actions (`.github/workflows/test.yml`) runs on every push, on pull requests, and weekly (to catch upstream changes such as renamed casks):
+GitHub Actions (`.github/workflows/test.yml`) runs once per change: on pull requests, on pushes to `main`, and weekly (to catch upstream changes such as renamed casks). A branch without a PR can be tested from the Actions tab ("Run workflow").
 
 - **shellcheck + consistency** (Linux): shellcheck on every script, and `tests/check-menu.sh`, which checks that every menu item points at an executable script and every script is in the menu and this README.
 - **Package check** (Linux): `tests/check-packages.py` reads the scripts and checks every Homebrew formula and cask, the croft tap formula, and each pinned npm package and version against its registry. It fails if anything is missing, deprecated or disabled. Most install scripts are too slow to run in CI, so this is what catches upstream renames, such as pi's npm package moving, within a week, via the weekly run.

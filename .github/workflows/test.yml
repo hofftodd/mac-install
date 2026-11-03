@@ -1,8 +1,12 @@
 name: test
 
+# One run per change: PRs are tested by the pull_request event, and main by
+# push. (Running on push for every branch as well tested each PR commit twice.)
 on:
   push:
+    branches: [main]
   pull_request:
+  # "Run workflow" button in the Actions tab, e.g. to test a branch with no PR.
   workflow_dispatch:
   # Weekly, to catch upstream changes (renamed casks, installer changes)
   # even when nothing in the repo changed.
@@ -12,9 +16,11 @@ on:
 permissions:
   contents: read
 
+# A new push to a PR cancels that PR's older, now-outdated run. Runs on main
+# are never cancelled, so every merge gets a complete result.
 concurrency:
   group: test-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   lint:

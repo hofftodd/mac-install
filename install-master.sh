@@ -78,6 +78,7 @@ ITEMS=(
     "Terminal experience|./install-modern-cli.sh"
     "Terminal experience|./install-nerd-fonts.sh"
     "Terminal experience|./install-starship.sh"
+    "Terminal experience|./install-zsh-plugins.sh"
     "Terminal experience|./install-btop.sh"
     "Terminal experience|./install-ghostty.sh"
     "Terminal experience|./install-iterm2.sh"
@@ -97,11 +98,11 @@ ITEMS=(
 
 # Scripts that start unticked in the menu. Docker Desktop, Rancher Desktop and
 # OrbStack each ship their own `docker` CLI/socket and conflict if installed or
-# run together, so the user picks one explicitly.
+# run together, so only one starts ticked: OrbStack, the default (light, fast
+# and runs Linux VMs too). Untick it and tick another to switch.
 DEFAULT_OFF=(
     "./install-docker-desktop.sh"
     "./install-rancher-desktop.sh"
-    "./install-orbstack.sh"
 )
 
 # --- Build state (parallel arrays; bash 3.2 compatible) ---

@@ -42,7 +42,12 @@ SCRIPTS=(
     install-google-contacts.sh
     install-modern-cli.sh
     install-starship.sh
+    install-zsh-plugins.sh
 )
+
+# bootstrap.sh adds Homebrew to ~/.zprofile on a real Mac; the runner never
+# runs bootstrap, so do the same here (doctor.sh checks for it).
+grep -qs 'brew shellenv' "$HOME/.zprofile" || echo "eval \"\$($(command -v brew) shellenv)\"" >> "$HOME/.zprofile"
 
 failures=0
 pass() { echo "  ✓ $*"; }
@@ -73,12 +78,17 @@ echo "== Shell setup in a new zsh"
 ls -la "$HOME/.zshrc.d"
 # Run each check in an interactive zsh, as a new terminal would.
 zcheck() {
-    local label="$1" cmd="$2" out
-    if out="$(zsh -i -c "$cmd" 2>&1)"; then
+    local label="$1" cmd="$2" out err errfile
+    errfile="$(mktemp)"
+    # Show the check's own output; the shell's stderr (e.g. zle notices when
+    # there's no terminal) only matters if the check fails.
+    if out="$(zsh -i -c "$cmd" 2>"$errfile")"; then
         pass "$label${out:+: $(printf '%s' "$out" | tail -1)}"
     else
-        fail "$label failed:"$'\n'"$out"
+        err="$(cat "$errfile")"
+        fail "$label failed:"$'\n'"$out"$'\n'"$err"
     fi
+    rm -f "$errfile"
 }
 for tool in uv python3 cargo rustc rust-analyzer go node little-coder pi omp bun java gradle psql starship rg eza delta micro; do
     zcheck "$tool on PATH" "command -v $tool"
@@ -101,6 +111,10 @@ zcheck "psql connects"          'psql -d postgres -tAc "select 1"'
 zcheck "tab completion is on"   '(( $+functions[compdef] ))'
 zcheck "uv completion loaded"   '[[ -n "${_comps[uv]:-}" ]]'
 zcheck "PATH has no duplicates" '[[ ${#path} -eq $(print -l $path | sort -u | wc -l) ]]'
+zcheck "fzf Ctrl-R history search" '(( $+widgets[fzf-history-widget] ))'
+zcheck "zsh-autosuggestions loaded" '(( $+functions[_zsh_autosuggest_start] ))'
+zcheck "zsh-syntax-highlighting loaded" '(( $+functions[_zsh_highlight] ))'
+zcheck "direnv hook installed" '(( ${precmd_functions[(I)_direnv_hook]} ))'
 zcheck "git pager is delta"     '[[ "$(git config --global core.pager)" == delta ]]'
 
 echo "== Chrome app launchers"
@@ -116,6 +130,21 @@ for app in "Gmail" "Google Calendar" "Google Contacts"; do
     else
         pass "$app.app: valid Info.plist, launcher opens Chrome in app mode"
     fi
+done
+
+echo "== update.sh (all steps except brew, which would upgrade the runner's own packages)"
+if ./update.sh rust uv node sdkman pins; then pass "update.sh rust uv node sdkman pins"; else fail "update.sh exited non-zero"; fi
+
+echo "== doctor.sh"
+if doctor_out="$(./doctor.sh 2>&1)"; then
+    pass "doctor.sh: nothing broken"
+else
+    fail "doctor.sh reported something broken:"$'\n'"$doctor_out"
+fi
+printf '%s\n' "$doctor_out" | sed 's/^/    /'
+for script in "${SCRIPTS[@]}"; do
+    case "$script" in install-*) ;; *) continue ;; esac
+    printf '%s\n' "$doctor_out" | grep -q "✓ $script " || fail "doctor.sh doesn't show $script as installed"
 done
 
 echo "== Repo left clean (update-versions must not edit tracked files)"

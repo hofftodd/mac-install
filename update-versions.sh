@@ -16,7 +16,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib/brew.sh"
 #                           postgresql@N, per endoflife.date (install-postgres.sh)
 #
 # Reported but not saved (pinned in their scripts on purpose):
-#   little-coder, Oh My Pi — third-party installers; bump after reviewing.
+#   little-coder, pi, Oh My Pi — third-party installers; bump after reviewing.
 #
 # Not pinned (always latest anyway):
 #   Python (uv), Rust (rustup), Bun, Go and every other Homebrew package or
@@ -113,8 +113,9 @@ report_pin() {
 }
 echo
 echo "Pinned in their scripts (not changed here):"
-LC_LATEST="$(curl -fsSL https://registry.npmjs.org/little-coder/latest 2>/dev/null | jq -r .version 2>/dev/null || true)"
-report_pin little-coder "$(pinned_default install-little-coder.sh LITTLE_CODER_VERSION)" "$LC_LATEST" install-little-coder.sh
+npm_latest() { curl -fsSL "https://registry.npmjs.org/$1/latest" 2>/dev/null | jq -r .version 2>/dev/null || true; }
+report_pin little-coder "$(pinned_default install-little-coder.sh LITTLE_CODER_VERSION)" "$(npm_latest little-coder)" install-little-coder.sh
+report_pin pi "$(pinned_default install-pi.sh PI_VERSION)" "$(npm_latest @earendil-works/pi-coding-agent)" install-pi.sh
 OMP_LATEST="$(git ls-remote --tags --refs https://github.com/can1357/oh-my-pi.git 2>/dev/null \
     | sed -n 's|.*refs/tags/v\([0-9]*\.[0-9]*\.[0-9]*\)$|\1|p' \
     | sort -t. -k1,1n -k2,2n -k3,3n | tail -1 || true)"

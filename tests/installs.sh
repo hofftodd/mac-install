@@ -28,6 +28,7 @@ SCRIPTS=(
     install-rust.sh
     install-nodejs.sh
     install-little-coder.sh
+    install-pi.sh
     install-oh-my-pi.sh
     install-bun.sh
     install-sdkman.sh
@@ -77,7 +78,7 @@ zcheck() {
         fail "$label failed:"$'\n'"$out"
     fi
 }
-for tool in uv python3 cargo rustc rust-analyzer go node little-coder omp bun java gradle psql starship rg eza delta micro; do
+for tool in uv python3 cargo rustc rust-analyzer go node little-coder pi omp bun java gradle psql starship rg eza delta micro; do
     zcheck "$tool on PATH" "command -v $tool"
 done
 zcheck "python3 is uv's"        '[[ "$(command -v python3)" == "$HOME/.local/bin/python3" ]] && python3 --version'
@@ -86,6 +87,7 @@ zcheck "java is SDKMAN's and runs" '[[ "$(command -v java)" == "$HOME/.sdkman/"*
 zcheck "rustc runs"             'rustc --version'
 zcheck "omp is the pinned release" 'omp --version'
 zcheck "little-coder is the pinned release" 'npm ls -g --depth=0 little-coder | grep little-coder@'
+zcheck "pi is the pinned release" 'npm ls -g --depth=0 @earendil-works/pi-coding-agent | grep pi-coding-agent@'
 zcheck "psql connects"          'psql -d postgres -tAc "select 1"'
 zcheck "tab completion is on"   '(( $+functions[compdef] ))'
 zcheck "uv completion loaded"   '[[ -n "${_comps[uv]:-}" ]]'

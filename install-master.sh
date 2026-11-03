@@ -39,6 +39,7 @@ ITEMS=(
     "Editors / dev apps|./install-micro.sh"
     "Editors / dev apps|./install-fresh.sh"
     "Editors / dev apps|./install-croft.sh"
+    "Editors / dev apps|./install-language-servers.sh"
     "Editors / dev apps|./install-claude-code.sh"
     "Editors / dev apps|./install-opencode.sh"
     "Editors / dev apps|./install-little-coder.sh"

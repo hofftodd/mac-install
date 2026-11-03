@@ -72,6 +72,15 @@ PI_VERSION=1.5.0            ./install-pi.sh
 OMP_VERSION=v18.16.0        ./install-oh-my-pi.sh
 ```
 
+### Checking what's installed
+
+```bash
+./doctor.sh            # full report
+./doctor.sh --no-brew  # skip `brew doctor` (a few seconds)
+```
+
+Lists every install script, grouped like the menu, with ✓ and the version, `–` if not installed, `!` if worth a look, or ✗ if it's installed but broken (for example `java` resolving to Apple's placeholder, or another `python3` ahead of uv's). Then it runs health checks: Homebrew set up in `~/.zprofile`, the `~/.zshrc.d` loader, no duplicate PATH entries, Fresh's language-server auto-start, any macOS settings changed, and `brew doctor`. Tools are looked up on the PATH a new terminal gets. Exits 1 if anything is broken.
+
 ### Keeping everything up to date
 
 ```bash

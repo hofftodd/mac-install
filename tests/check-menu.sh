@@ -34,6 +34,12 @@ for script in install-*.sh macos-*.sh update-versions.sh; do
     grep -qF "\`$script\`" README.md || fail "$script is not described in README.md"
 done
 
+# Every install script has a check in doctor.sh.
+for script in install-*.sh update-versions.sh; do
+    [ "$script" = install-master.sh ] && continue
+    grep -qE "(^|')${script//./\\.}\|" doctor.sh || fail "$script has no check in doctor.sh (add it to CHECKS)"
+done
+
 # macOS settings: each script lists its settings, with unique ids.
 for script in macos-*.sh; do
     ids="$(./"$script" --list | cut -d'|' -f1)"

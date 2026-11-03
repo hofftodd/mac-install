@@ -45,6 +45,10 @@ SCRIPTS=(
     install-zsh-plugins.sh
 )
 
+# bootstrap.sh adds Homebrew to ~/.zprofile on a real Mac; the runner never
+# runs bootstrap, so do the same here (doctor.sh checks for it).
+grep -qs 'brew shellenv' "$HOME/.zprofile" || echo "eval \"\$($(command -v brew) shellenv)\"" >> "$HOME/.zprofile"
+
 failures=0
 pass() { echo "  ✓ $*"; }
 fail() {
@@ -125,6 +129,18 @@ done
 
 echo "== update.sh (all steps except brew, which would upgrade the runner's own packages)"
 if ./update.sh rust uv node sdkman pins; then pass "update.sh rust uv node sdkman pins"; else fail "update.sh exited non-zero"; fi
+
+echo "== doctor.sh"
+if doctor_out="$(./doctor.sh 2>&1)"; then
+    pass "doctor.sh: nothing broken"
+else
+    fail "doctor.sh reported something broken:"$'\n'"$doctor_out"
+fi
+printf '%s\n' "$doctor_out" | sed 's/^/    /'
+for script in "${SCRIPTS[@]}"; do
+    case "$script" in install-*) ;; *) continue ;; esac
+    printf '%s\n' "$doctor_out" | grep -q "✓ $script " || fail "doctor.sh doesn't show $script as installed"
+done
 
 echo "== Repo left clean (update-versions must not edit tracked files)"
 if [ -z "$(git status --porcelain)" ]; then pass "no changes in the checkout"; else fail "checkout modified:"$'\n'"$(git status --porcelain)"; fi

@@ -12,6 +12,8 @@ This project was vibe coded with [Claude Code](https://claude.com/claude-code) �
 
 On a brand-new Mac, you don't have this repo yet. Run the bootstrap one-liner — it installs the Xcode Command Line Tools and Homebrew (and adds Homebrew to your PATH in `~/.zprofile`), prompts for your git name and email, generates an SSH key, prints it for you to paste into GitHub, then clones this repo.
 
+Run it from an **Administrator** account: Homebrew needs `sudo`, and the script asks for your login password when it installs Homebrew. On a Standard account it stops and explains how to fix that.
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/hofftodd/mac-install/main/bootstrap.sh | bash
 ```
@@ -126,7 +128,7 @@ These categories match the menu layout in `install-master.sh`.
 - `install-opencode.sh` — opencode, open-source terminal coding agent.
 - `install-little-coder.sh` — little-coder, npm-based AI coding agent CLI (needs Node 22.19+). Pinned to a release (`LITTLE_CODER_VERSION`, installed with `npm install -g little-coder@<version>`) rather than piping the project's install script from its main branch.
 - `install-pi.sh` — pi (pi.dev), terminal coding agent, from npm (`@earendil-works/pi-coding-agent`; needs Node 22.19+). Pinned to a release (`PI_VERSION`). Removes the old, deprecated `@mariozechner/pi-coding-agent` if it's installed, since both provide the `pi` command.
-- `install-oh-my-pi.sh` — Oh My Pi, AI coding agent for the terminal (hash-anchored edits, LSP, Python, browser, subagents); binary `omp` from [can1357/oh-my-pi](https://github.com/can1357/oh-my-pi). Pinned to a release (`OMP_VERSION`): the installer is fetched from that release tag and installs its prebuilt binary after checking its sha256.
+- `install-oh-my-pi.sh` — Oh My Pi, AI coding agent for the terminal (hash-anchored edits, LSP, Python, browser, subagents); binary `omp` from [can1357/oh-my-pi](https://github.com/can1357/oh-my-pi). Pinned to a release (`OMP_VERSION`): the installer is fetched from that release tag and installs its prebuilt binary after checking its sha256. Oh My Pi's download service is sometimes slow, so the download is retried up to 3 times (`OMP_ATTEMPTS`).
 
 ### VMs and virtualization
 - `install-docker-desktop.sh` — Docker Desktop.

@@ -55,7 +55,21 @@ if ! xcode-select -p >/dev/null 2>&1; then
 fi
 
 if ! command -v brew >/dev/null 2>&1; then
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    # Homebrew's installer needs sudo, which only Administrator accounts have.
+    # Without it, it aborts with "Insufficient permissions to install Homebrew".
+    if ! id -Gn | tr ' ' '\n' | grep -qx admin; then
+        echo "  This account ($(id -un)) isn't an Administrator, so it can't install Homebrew." >&2
+        echo "  Either log in as an admin and run this there, or make this account an admin:" >&2
+        echo "  System Settings → Users & Groups → (this user) → Allow user to administer this computer." >&2
+        echo "  Then open a new terminal and re-run the bootstrap one-liner." >&2
+        exit 1
+    fi
+    # This script is usually piped in (curl ... | bash), so its stdin is the
+    # download, not the terminal. Homebrew's installer then runs
+    # non-interactively, can't ask for your password, and aborts with
+    # "Insufficient permissions". Give it the terminal so it can ask.
+    echo "  Installing Homebrew — it will ask for your login password (for sudo)."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" < /dev/tty
 fi
 
 # Put brew on PATH for this shell (Apple Silicon vs Intel), and for every

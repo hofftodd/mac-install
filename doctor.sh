@@ -181,7 +181,7 @@ install-bun.sh|cmd:bun
 install-ollama.sh|app:Ollama.app
 install-lmstudio.sh|app:LM Studio.app
 install-llamacpp.sh|cmd:llama-cli
-install-sushi.sh|cmd:sushi
+install-sushi.sh|brew:sushi
 install-dwarfstar.sh|fn:check_dwarfstar
 install-vscode.sh|app:Visual Studio Code.app
 install-cursor.sh|app:Cursor.app

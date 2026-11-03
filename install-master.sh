@@ -78,6 +78,7 @@ ITEMS=(
     "Terminal experience|./install-modern-cli.sh"
     "Terminal experience|./install-nerd-fonts.sh"
     "Terminal experience|./install-starship.sh"
+    "Terminal experience|./install-zsh-plugins.sh"
     "Terminal experience|./install-btop.sh"
     "Terminal experience|./install-ghostty.sh"
     "Terminal experience|./install-iterm2.sh"

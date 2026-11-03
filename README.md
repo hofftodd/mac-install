@@ -72,6 +72,15 @@ PI_VERSION=1.5.0            ./install-pi.sh
 OMP_VERSION=v18.16.0        ./install-oh-my-pi.sh
 ```
 
+### Keeping everything up to date
+
+```bash
+./update.sh            # everything
+./update.sh rust uv    # just some steps
+```
+
+Updates Homebrew packages and apps (`brew`), Rust toolchains (`rust`), uv's Python and tools (`uv`), Node to the newest LTS with the pinned npm tools carried over (`node`), and SDKMAN with Java, Groovy and Gradle (`sdkman`). Then it reports newer releases of the pinned tools (`pins`): little-coder, pi and Oh My Pi, which you bump by hand. Steps for tools you haven't installed are skipped. A failed step doesn't stop the rest; the summary shows it, and the exit status is non-zero. macOS updates stay in System Settings.
+
 ## What's included
 
 These categories match the menu layout in `install-master.sh`.
@@ -146,9 +155,10 @@ These categories match the menu layout in `install-master.sh`.
 - `install-handbrake.sh` — HandBrake (GUI + CLI).
 
 ### Terminal experience
-- `install-modern-cli.sh` — bundle of modern CLI tools: ripgrep, fd, bat, eza, fzf, zoxide, git-delta, jq, yq, tree, htop, ncdu. Adds zoxide init and eza aliases (`ls`, `ll`, `la`, `lt`) in `~/.zshrc.d/80-modern-cli.zsh`.
+- `install-modern-cli.sh` — bundle of modern CLI tools: ripgrep, fd, bat, eza, fzf, zoxide, git-delta, jq, yq, tree, htop, ncdu. Sets up fzf's key bindings (Ctrl-R fuzzy history search, Ctrl-T insert a file path, Alt-C cd into a folder), zoxide, and eza aliases (`ls`, `ll`, `la`, `lt`) in `~/.zshrc.d/80-modern-cli.zsh`.
 - `install-nerd-fonts.sh` — FiraCode, JetBrainsMono, Hack, Meslo, CaskaydiaCove (Nerd Fonts) via brew casks.
 - `install-starship.sh` — Starship prompt. Applies the Gruvbox Rainbow preset only if you don't already have `~/.config/starship.toml`.
+- `install-zsh-plugins.sh` — zsh-autosuggestions (grey suggestions from history as you type; → accepts), zsh-syntax-highlighting (mistyped commands turn red), and direnv (loads a project's `.envrc` when you `cd` in, unloads it when you leave; approve each one with `direnv allow`). Loaded from `~/.zshrc.d/99-zsh-plugins.zsh`, last, as syntax highlighting requires.
 - `install-btop.sh` — btop process/resource monitor.
 - `install-ghostty.sh` — Ghostty, fast GPU-accelerated native terminal emulator.
 - `install-iterm2.sh` — iTerm2, feature-rich terminal emulator for macOS.

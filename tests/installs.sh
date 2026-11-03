@@ -42,6 +42,7 @@ SCRIPTS=(
     install-google-contacts.sh
     install-modern-cli.sh
     install-starship.sh
+    install-zsh-plugins.sh
 )
 
 failures=0
@@ -101,6 +102,10 @@ zcheck "psql connects"          'psql -d postgres -tAc "select 1"'
 zcheck "tab completion is on"   '(( $+functions[compdef] ))'
 zcheck "uv completion loaded"   '[[ -n "${_comps[uv]:-}" ]]'
 zcheck "PATH has no duplicates" '[[ ${#path} -eq $(print -l $path | sort -u | wc -l) ]]'
+zcheck "fzf Ctrl-R history search" '(( $+widgets[fzf-history-widget] ))'
+zcheck "zsh-autosuggestions loaded" '(( $+functions[_zsh_autosuggest_start] ))'
+zcheck "zsh-syntax-highlighting loaded" '(( $+functions[_zsh_highlight] ))'
+zcheck "direnv hook installed" '(( ${precmd_functions[(I)_direnv_hook]} ))'
 zcheck "git pager is delta"     '[[ "$(git config --global core.pager)" == delta ]]'
 
 echo "== Chrome app launchers"
@@ -117,6 +122,9 @@ for app in "Gmail" "Google Calendar" "Google Contacts"; do
         pass "$app.app: valid Info.plist, launcher opens Chrome in app mode"
     fi
 done
+
+echo "== update.sh (all steps except brew, which would upgrade the runner's own packages)"
+if ./update.sh rust uv node sdkman pins; then pass "update.sh rust uv node sdkman pins"; else fail "update.sh exited non-zero"; fi
 
 echo "== Repo left clean (update-versions must not edit tracked files)"
 if [ -z "$(git status --porcelain)" ]; then pass "no changes in the checkout"; else fail "checkout modified:"$'\n'"$(git status --porcelain)"; fi

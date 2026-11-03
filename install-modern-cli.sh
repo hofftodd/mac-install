@@ -16,8 +16,12 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib/zshrc.sh"
 brew install \
     ripgrep fd bat eza fzf zoxide git-delta jq yq tree htop ncdu
 
-# Shell setup: zoxide init and eza aliases for ls (~/.zshrc.d/80-modern-cli.zsh)
+# Shell setup: fzf key bindings, zoxide init and eza aliases for ls (~/.zshrc.d/80-modern-cli.zsh)
 install_zshrc_snippet 80-modern-cli <<'EOF'
+# fzf key bindings: Ctrl-R fuzzy history search, Ctrl-T insert a file path,
+# Alt-C cd into a folder (plus ** <Tab> fuzzy completion).
+command -v fzf >/dev/null && source <(fzf --zsh)
+
 # modern-cli init
 eval "$(zoxide init zsh)"
 
@@ -29,3 +33,5 @@ alias lt='eza --tree --level=2 --icons=auto'
 EOF
 
 echo "Modern CLI tools installed. Restart your shell or run: source ~/.zshrc"
+echo "fzf keys: Ctrl-R history, Ctrl-T file path, Alt-C cd into a folder."
+echo "  For Alt-C, set Option to act as Meta/Esc+ (Terminal: Settings → Profiles → Keyboard; iTerm2: Profiles → Keys)."

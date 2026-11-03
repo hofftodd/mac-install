@@ -32,6 +32,8 @@ ITEMS=(
     "Local LLMs|./install-ollama.sh"
     "Local LLMs|./install-lmstudio.sh"
     "Local LLMs|./install-llamacpp.sh"
+    "Local LLMs|./install-sushi.sh"
+    "Local LLMs|./install-dwarfstar.sh"
 
     "Editors / dev apps|./install-vscode.sh"
     "Editors / dev apps|./install-cursor.sh"

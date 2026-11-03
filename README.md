@@ -12,6 +12,8 @@ This project was vibe coded with [Claude Code](https://claude.com/claude-code) â
 
 On a brand-new Mac, you don't have this repo yet. Run the bootstrap one-liner â€” it installs the Xcode Command Line Tools and Homebrew (and adds Homebrew to your PATH in `~/.zprofile`), prompts for your git name and email, generates an SSH key, prints it for you to paste into GitHub, then clones this repo.
 
+Run it from an **Administrator** account: Homebrew needs `sudo`, and the script asks for your login password when it installs Homebrew. On a Standard account it stops and explains how to fix that.
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/hofftodd/mac-install/main/bootstrap.sh | bash
 ```

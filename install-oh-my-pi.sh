@@ -20,8 +20,22 @@ OMP_BIN="$HOME/.local/bin/omp"
 if [ -x "$OMP_BIN" ] && "$OMP_BIN" --version 2>/dev/null | grep -qF "${OMP_VERSION#v}"; then
     echo "Oh My Pi ${OMP_VERSION} is already installed at $OMP_BIN."
 else
-    curl -fsSL "https://raw.githubusercontent.com/can1357/oh-my-pi/${OMP_VERSION}/scripts/install.sh" \
-        | sh -s -- --binary --ref "$OMP_VERSION"
+    # Oh My Pi's build service (build.stencil.so) is sometimes slow or briefly
+    # unavailable (its installer gives up after 60 s), so retry a few times
+    # before failing. OMP_ATTEMPTS changes how many.
+    attempts="${OMP_ATTEMPTS:-3}"
+    attempt=1
+    until curl -fsSL "https://raw.githubusercontent.com/can1357/oh-my-pi/${OMP_VERSION}/scripts/install.sh" \
+        | sh -s -- --binary --ref "$OMP_VERSION"; do
+        if [ "$attempt" -ge "$attempts" ]; then
+            echo "Oh My Pi download failed after $attempts attempts; its download service may be down. Try again later." >&2
+            exit 1
+        fi
+        wait_s=$((attempt * 15))
+        echo "Attempt $attempt of $attempts failed (Oh My Pi's download service may be busy); retrying in ${wait_s}s..."
+        sleep "$wait_s"
+        attempt=$((attempt + 1))
+    done
 fi
 
 install_zshrc_snippet 10-local-bin <<'SNIPPET'

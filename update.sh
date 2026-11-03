@@ -10,7 +10,8 @@ source lib/brew.sh
 #   uv       uv-managed Python and CLI tools (pylsp, ...)
 #   node     Node to the newest LTS via nvm, carrying global npm packages
 #            (the pinned pi / little-coder versions) over
-#   sdkman   SDKMAN, then Java, Groovy and Gradle to their newest versions
+#   sdkman   SDKMAN, Groovy and Gradle to their newest versions; Java's
+#            default is left alone (it reports a newer Temurin if there is one)
 #   pins     report newer releases of the tools pinned on purpose
 #            (little-coder, pi, Oh My Pi) — those you bump by hand
 #
@@ -87,20 +88,36 @@ step_sdkman() {
     # SDKMAN needs Bash 4+ (install-sdkman.sh installs Homebrew's bash).
     bash4="$(brew --prefix 2>/dev/null)/bin/bash"
     [ -x "$bash4" ] || { echo "SDKMAN needs Homebrew's bash; run install-sdkman.sh." >&2; return 1; }
+    # SDKMAN's own functions aren't `set -e` safe (an internal non-zero status
+    # aborts mid-install), so check each command's result instead.
     SDKMAN_DIR="$sdkman_dir" "$bash4" -c '
-        set -e
-        export SDKMAN_AUTO_ANSWER=true
         source "$SDKMAN_DIR/bin/sdkman-init.sh"
+        # SDKMAN reads the lowercase sdkman_auto_answer, which its config
+        # resets while loading, so set it after sourcing.
+        sdkman_auto_answer=true
+        rc=0
         sdk selfupdate || true
-        sdk update
-        # `sdk upgrade` exits 1 when there is nothing to upgrade.
-        if ! out="$(sdk upgrade 2>&1)"; then
-            printf "%s\n" "$out"
-            case "$out" in *"No new candidates found"*) ;; *) exit 1 ;; esac
-        else
-            printf "%s\n" "$out"
+        sdk update || rc=1
+        # Groovy and Gradle: upgrade to the newest version (each by name;
+        # "up-to-date" exits 0).
+        for c in groovy gradle; do
+            if [ -e "$SDKMAN_DIR/candidates/$c/current" ]; then sdk upgrade "$c" || rc=1; fi
+        done
+        # Java is left alone: a bare `sdk upgrade` would switch the default to
+        # SDKMAN'"'"'s recommended version (e.g. 27 → 25 LTS). Just say when a
+        # newer Temurin than the default exists.
+        if [ -e "$SDKMAN_DIR/candidates/java/current" ]; then
+            cur="$(basename "$(readlink "$SDKMAN_DIR/candidates/java/current")")"
+            latest="$(sdk list java 2>/dev/null | awk "{ for (i = 1; i <= NF; i++) if (\$i ~ /-tem\$/) { print \$i; exit } }")"
+            if [ -n "$latest" ] && [ "$latest" != "$cur" ]; then
+                echo "Java: your default is $cur; the newest Temurin is $latest."
+                echo "      To switch: sdk install java $latest"
+            else
+                echo "Java: $cur is the newest Temurin."
+            fi
         fi
-        sdk current'
+        sdk current
+        exit "$rc"' </dev/null   # no terminal input: a stray prompt can't hang the update
 }
 
 step_pins() {

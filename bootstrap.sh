@@ -161,8 +161,15 @@ main() {
     ssh-keyscan -t ed25519 github.com >> "$HOME/.ssh/known_hosts" 2>/dev/null </dev/null || true
     sort -u "$HOME/.ssh/known_hosts" -o "$HOME/.ssh/known_hosts" 2>/dev/null || true
 
-    # ssh reads its input, so give it none (see main() above).
-    until ssh -T -o BatchMode=yes -o StrictHostKeyChecking=accept-new git@github.com </dev/null 2>&1 | grep -q "successfully authenticated"; do
+    # `ssh -T git@github.com` exits 1 even when auth works (GitHub gives no
+    # shell), so under pipefail `ssh | grep` always fails. Capture the output
+    # first, then grep it. ssh reads its input, so give it none (see main()).
+    github_ssh_ok() {
+        local out
+        out="$(ssh -T -o BatchMode=yes -o StrictHostKeyChecking=accept-new git@github.com </dev/null 2>&1 || true)"
+        grep -q "successfully authenticated" <<<"$out"
+    }
+    until github_ssh_ok; do
         echo "  ✗ GitHub doesn't accept this key yet." >&2
         echo "    Add the key shown above at https://github.com/settings/ssh/new" >&2
         echo "    (it's on your clipboard; key type: Authentication Key)." >&2

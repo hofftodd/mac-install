@@ -124,23 +124,31 @@ zcheck "zsh-syntax-highlighting loaded" '(( $+functions[_zsh_highlight] ))'
 zcheck "direnv hook installed" '(( ${precmd_functions[(I)_direnv_hook]} ))'
 zcheck "git pager is delta"     '[[ "$(git config --global core.pager)" == delta ]]'
 
-echo "== Chrome app launchers"
-for app in "Gmail" "Google Calendar" "Google Contacts"; do
-    bundle="$HOME/Applications/$app.app"
-    exe="$bundle/Contents/MacOS/$(printf '%s' "$app" | tr -d ' ')"
-    if ! plutil -lint "$bundle/Contents/Info.plist" >/dev/null; then
-        fail "$app.app: Info.plist missing or invalid"
-    elif [ ! -x "$exe" ]; then
-        fail "$app.app: launcher $exe missing or not executable"
-    elif ! grep -qF -- '--app="https://' "$exe"; then
-        fail "$app.app: launcher doesn't open Chrome in app mode:"$'\n'"$(cat "$exe")"
-    elif [ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' "$bundle/Contents/Info.plist" 2>/dev/null)" != AppIcon ] \
-        || [ ! -s "$bundle/Contents/Resources/AppIcon.icns" ]; then
-        fail "$app.app: no icon (CFBundleIconFile / Contents/Resources/AppIcon.icns)"
-    else
-        pass "$app.app: valid Info.plist, icon, launcher opens Chrome in app mode"
-    fi
-done
+echo "== Chrome web apps (Gmail, Calendar, Contacts)"
+# Installing the app itself is a click in Chrome, so CI can only check the
+# script's own work: old --app launchers it created are removed, and an app
+# of the same name it didn't create is left alone.
+fake_app() { # fake_app <bundle> <bundle id>
+    mkdir -p "$1/Contents"
+    printf '<?xml version="1.0" encoding="UTF-8"?>\n<plist version="1.0"><dict><key>CFBundleIdentifier</key><string>%s</string></dict></plist>\n' "$2" > "$1/Contents/Info.plist"
+}
+legacy="$HOME/Applications/Gmail.app"
+fake_app "$legacy" net.hoffmannet.Gmail
+if ! ./install-gmail.sh >/dev/null; then
+    fail "install-gmail.sh failed"
+elif [ -e "$legacy" ]; then
+    fail "install-gmail.sh left the old launcher at $legacy"
+else
+    pass "install-gmail.sh removes the old --app launcher"
+fi
+fake_app "$legacy" com.example.NotOurs
+./install-gmail.sh >/dev/null || true
+if [ -d "$legacy" ]; then
+    pass "install-gmail.sh leaves an unrelated Gmail.app alone"
+else
+    fail "install-gmail.sh deleted a Gmail.app it didn't create"
+fi
+rm -rf "${legacy:?}"
 
 echo "== update.sh (all steps except brew, which would upgrade the runner's own packages)"
 if ./update.sh rust uv node sdkman pins; then pass "update.sh rust uv node sdkman pins"; else fail "update.sh exited non-zero"; fi

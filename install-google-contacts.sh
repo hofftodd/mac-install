@@ -3,6 +3,5 @@ set -euo pipefail
 
 source "$(dirname "${BASH_SOURCE[0]}")/lib/chrome-app.sh"
 
-# Google Contacts as a Chrome "app-mode" launcher in ~/Applications (see lib/chrome-app.sh).
-install_chrome_app "Google Contacts" "https://contacts.google.com/" \
-    "https://www.gstatic.com/images/branding/product/2x/contacts_2022_512dp.png"
+# Google Contacts as a Chrome-installed app (see lib/chrome-app.sh).
+install_chrome_app "Google Contacts" "https://contacts.google.com/"

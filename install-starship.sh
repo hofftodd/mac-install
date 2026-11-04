@@ -10,16 +10,32 @@ install_zshrc_snippet 90-starship <<'EOF'
 eval "$(starship init zsh)"
 EOF
 
-# Apply the Gruvbox Rainbow preset — only if there's no config yet, so
-# re-running never overwrites your own changes.
+# Write the Gruvbox Rainbow preset to stdout, changed to show user@hostname
+# (the preset shows only the username). The hostname shows on every machine,
+# not only over SSH.
+gruvbox_rainbow_with_hostname() {
+    starship preset gruvbox-rainbow \
+        | awk '{ print } $0 == "$username\\" { print "$hostname\\" }' \
+        | sed "s/^format = '\[\$user \](\$style)'\$/format = '[\$user](\$style)'/"
+    cat <<'EOF'
+
+[hostname]
+ssh_only = false
+style = "bg:color_orange fg:color_fg0"
+format = '[@$hostname ]($style)'
+EOF
+}
+
+# Apply the preset only if there's no config yet, so re-running never
+# overwrites your own changes.
 STARSHIP_CONFIG_FILE="${STARSHIP_CONFIG:-$HOME/.config/starship.toml}"
 if [ -e "$STARSHIP_CONFIG_FILE" ]; then
     echo "Keeping your existing $STARSHIP_CONFIG_FILE."
     echo "  To switch to the Gruvbox Rainbow preset: starship preset gruvbox-rainbow -o $STARSHIP_CONFIG_FILE"
 else
     mkdir -p "$(dirname "$STARSHIP_CONFIG_FILE")"
-    starship preset gruvbox-rainbow -o "$STARSHIP_CONFIG_FILE"
-    echo "Applied the Gruvbox Rainbow preset to $STARSHIP_CONFIG_FILE."
+    gruvbox_rainbow_with_hostname > "$STARSHIP_CONFIG_FILE"
+    echo "Applied the Gruvbox Rainbow preset (with user@hostname) to $STARSHIP_CONFIG_FILE."
 fi
 
 echo "Starship installed. Restart your shell or run: source ~/.zshrc"

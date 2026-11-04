@@ -134,8 +134,11 @@ for app in "Gmail" "Google Calendar" "Google Contacts"; do
         fail "$app.app: launcher $exe missing or not executable"
     elif ! grep -qF -- '--app="https://' "$exe"; then
         fail "$app.app: launcher doesn't open Chrome in app mode:"$'\n'"$(cat "$exe")"
+    elif [ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' "$bundle/Contents/Info.plist" 2>/dev/null)" != AppIcon ] \
+        || [ ! -s "$bundle/Contents/Resources/AppIcon.icns" ]; then
+        fail "$app.app: no icon (CFBundleIconFile / Contents/Resources/AppIcon.icns)"
     else
-        pass "$app.app: valid Info.plist, launcher opens Chrome in app mode"
+        pass "$app.app: valid Info.plist, icon, launcher opens Chrome in app mode"
     fi
 done
 

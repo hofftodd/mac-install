@@ -75,6 +75,13 @@ check_sdkman() {
     esac
 }
 
+# Frogmouth is a uv tool; read its version from uv rather than starting the TUI.
+check_frogmouth() {
+    local v=""
+    command -v uv >/dev/null 2>&1 && v="$(uv tool list 2>/dev/null | grep -E '^frogmouth ' | head -1 || true)"
+    if [ -n "$v" ]; then ok "$1" "$v"; else missing "$1"; fi
+}
+
 check_uv() {
     command -v uv >/dev/null 2>&1 || { missing "$1"; return; }
     if [ "$(command -v python3 || true)" = "$HOME/.local/bin/python3" ]; then
@@ -172,6 +179,7 @@ check_versions_file() {
 CHECKS='update-versions.sh|fn:check_versions_file
 install-git-config.sh|fn:check_git_config
 install-gh.sh|cmd:gh
+install-lazygit.sh|cmd:lazygit
 install-sdkman.sh|fn:check_sdkman
 install-uv.sh|fn:check_uv
 install-go.sh|cmd:go:version
@@ -188,6 +196,7 @@ install-cursor.sh|app:Cursor.app
 install-intellij.sh|app:IntelliJ IDEA.app
 install-micro.sh|cmd:micro
 install-fresh.sh|cmd:fresh
+install-posting.sh|brew:posting
 install-croft.sh|cmd:croft
 install-language-servers.sh|fn:check_language_servers
 install-claude-code.sh|cmd:claude
@@ -198,6 +207,7 @@ install-oh-my-pi.sh|cmd:omp
 install-docker-desktop.sh|app:Docker.app
 install-rancher-desktop.sh|app:Rancher Desktop.app
 install-orbstack.sh|app:OrbStack.app
+install-lazydocker.sh|cmd:lazydocker
 install-lima.sh|cmd:limactl
 install-utm.sh|app:UTM.app
 install-obsidian.sh|app:Obsidian.app
@@ -222,6 +232,7 @@ install-modern-cli.sh|fn:check_modern_cli
 install-nerd-fonts.sh|fn:check_nerd_fonts
 install-starship.sh|cmd:starship
 install-btop.sh|cmd:btop
+install-frogmouth.sh|fn:check_frogmouth
 install-ghostty.sh|app:Ghostty.app
 install-iterm2.sh|app:iTerm.app
 install-zsh-plugins.sh|fn:check_zsh_plugins'

@@ -21,6 +21,7 @@ ITEMS=(
 
     "Git/GitHub|./install-git-config.sh"
     "Git/GitHub|./install-gh.sh"
+    "Git/GitHub|./install-lazygit.sh"
 
     "Languages|./install-sdkman.sh"
     "Languages|./install-uv.sh"
@@ -41,6 +42,7 @@ ITEMS=(
     "Editors / dev apps|./install-micro.sh"
     "Editors / dev apps|./install-fresh.sh"
     "Editors / dev apps|./install-croft.sh"
+    "Editors / dev apps|./install-posting.sh"
     "Editors / dev apps|./install-language-servers.sh"
     "Editors / dev apps|./install-claude-code.sh"
     "Editors / dev apps|./install-opencode.sh"
@@ -51,6 +53,7 @@ ITEMS=(
     "VMs and virtualization|./install-docker-desktop.sh"
     "VMs and virtualization|./install-rancher-desktop.sh"
     "VMs and virtualization|./install-orbstack.sh"
+    "VMs and virtualization|./install-lazydocker.sh"
     "VMs and virtualization|./install-lima.sh"
     "VMs and virtualization|./install-utm.sh"
 
@@ -82,6 +85,7 @@ ITEMS=(
     "Terminal experience|./install-starship.sh"
     "Terminal experience|./install-zsh-plugins.sh"
     "Terminal experience|./install-btop.sh"
+    "Terminal experience|./install-frogmouth.sh"
     "Terminal experience|./install-ghostty.sh"
     "Terminal experience|./install-iterm2.sh"
 

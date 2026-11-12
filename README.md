@@ -72,6 +72,7 @@ PG_FORMULA=postgresql@17    ./install-postgres.sh
 LITTLE_CODER_VERSION=1.20.0 ./install-little-coder.sh
 PI_VERSION=1.5.0            ./install-pi.sh
 OMP_VERSION=v18.16.0        ./install-oh-my-pi.sh
+FROGMOUTH_PYTHON=3.12       ./install-frogmouth.sh
 ```
 
 ### Checking what's installed
@@ -102,6 +103,7 @@ These categories match the menu layout in `install-master.sh`.
 ### Git / GitHub
 - `install-git-config.sh` — global git config: `user.name`/`user.email` (prompts if not set), modern defaults, aliases. Installs and sets up `micro` as the editor and `git-delta` as the pager.
 - `install-gh.sh` — GitHub CLI (`gh`).
+- `install-lazygit.sh` — lazygit, terminal UI for git.
 
 ### Languages
 - `install-sdkman.sh` — SDKMAN! plus Java (latest Eclipse Temurin), Groovy, and Gradle. Self-updates SDKMAN when re-run. SDKMAN needs Bash 4+, so this also installs Homebrew's `bash` (macOS only ships 3.2); your shell stays zsh.
@@ -125,6 +127,7 @@ These categories match the menu layout in `install-master.sh`.
 - `install-micro.sh` — micro, modern terminal text editor.
 - `install-fresh.sh` — Fresh terminal text editor (`fresh-editor` formula).
 - `install-croft.sh` — croft, VSCode-style terminal text editor (from the `vitali87/croft` Homebrew tap).
+- `install-posting.sh` — Posting, API client for the terminal (requests, collections, environments).
 - `install-language-servers.sh` — language servers (LSP) so editors get completion, diagnostics, go-to-definition, hover, rename and formatting: rust-analyzer (Rust), gopls (Go), pylsp + ruff (Python, via `uv tool`), typescript-language-server (TS/JS), vscode-langservers-extracted (HTML/CSS/JSON), bash-language-server, yaml-language-server, taplo (TOML), marksman (Markdown; pinned release, checksum-verified), jdtls (Java), sqls (SQL; pinned, via `go install`), and clangd from the Xcode Command Line Tools (C/C++). Fresh already knows all of these but only starts a server by itself if `auto_start` is on, so this also turns that on for each installed server in `~/.config/fresh/config.json` — adding only what's missing, never changing your own settings (the old file is backed up first; a file with comments is left alone). Fresh runs servers only in workspaces you've trusted. Run after the Languages scripts (Rust, Go, uv), which provide some of the servers.
 - `install-claude-code.sh` — Claude Code CLI (Anthropic).
 - `install-opencode.sh` — opencode, open-source terminal coding agent.
@@ -136,6 +139,7 @@ These categories match the menu layout in `install-master.sh`.
 - `install-docker-desktop.sh` — Docker Desktop.
 - `install-rancher-desktop.sh` — Rancher Desktop, containers plus local Kubernetes (`rancher` cask).
 - `install-orbstack.sh` — OrbStack, lightweight Docker and Linux VMs for macOS. **The default** for containers: the only one of the three Docker providers that starts ticked.
+- `install-lazydocker.sh` — lazydocker, terminal UI for Docker and Docker Compose. Works with whichever Docker provider is running.
 - `install-lima.sh` — Lima, Linux VMs on macOS (containerd/nerdctl included). Doesn't create a VM; run `limactl start` afterward.
 - `install-utm.sh` — UTM, virtual-machines UI built on QEMU.
 
@@ -173,6 +177,7 @@ These categories match the menu layout in `install-master.sh`.
 - `install-starship.sh` — Starship prompt. Applies the Gruvbox Rainbow preset only if you don't already have `~/.config/starship.toml`.
 - `install-zsh-plugins.sh` — zsh-autosuggestions (grey suggestions from history as you type; → accepts), zsh-syntax-highlighting (mistyped commands turn red), and direnv (loads a project's `.envrc` when you `cd` in, unloads it when you leave; approve each one with `direnv allow`). Loaded from `~/.zshrc.d/99-zsh-plugins.zsh`, last, as syntax highlighting requires.
 - `install-btop.sh` — btop process/resource monitor.
+- `install-frogmouth.sh` — Frogmouth, Markdown browser for the terminal (local files, URLs, GitHub READMEs). Not in Homebrew, so it's installed with `uv tool`; run `install-uv.sh` first. It runs on its own Python 3.13 (`FROGMOUTH_PYTHON`), since frogmouth 0.9.x crashes on start under Python 3.14+.
 - `install-ghostty.sh` — Ghostty, fast GPU-accelerated native terminal emulator.
 - `install-iterm2.sh` — iTerm2, feature-rich terminal emulator for macOS.
 
